@@ -37,86 +37,25 @@ const panels = [
 
 const panelTexts = {
 
-  /*
-    Primeiro quadrinho.
-
-    Os textos "Eu", "te",
-    "vi" e "lá" estão
-    diretamente no HTML.
-  */
-
   0: "",
-
-
-  /*
-    Quadrinho 2
-  */
 
   1: "Você usa \nquase as \nmesmas \nroupas",
 
-
-  /*
-    Quadrinho 3
-
-    Cada \n representa
-    uma nova linha.
-  */
-
   2: "Seu\nolhar\nanda\ncansado",
-
-
-  /*
-    Quadrinho 4
-  */
 
   3: "Desde então\nmuito tempo \nse passou",
 
-
-  /*
-    Quadrinho 5
-  */
-
   4: "Tempo o suficiente para lembrar o \nporquê não nos falamos",
-
-
-  /*
-    Quadrinho 6
-  */
 
   5: "Tempo o suficiente para lembrar\ndas tardes que o silêncio não existia",
 
-
-  /*
-    Quadrinho 7
-  */
-
   6: "Não deixo de pensar na tragédia\ndo passado",
-
-
-  /*
-    Quadrinho 8
-  */
 
   7: "O silêncio seria brutalmente\nassassinado",
 
-
-  /*
-    Quadrinho 9
-  */
-
-  8: "Mostraíamos os dentes e\nberraríamos como hienas",
-
-
-  /*
-    Quadrinho 10
-  */
+  8: "Mostraríamos os dentes e\nberraríamos como hienas",
 
   9: "Que bom que agora nos resta\no silêncio e",
-
-
-  /*
-    Quadrinho 11
-  */
 
   10: "Nossos dentes estão escondidos\npelo cansaço"
 
@@ -170,37 +109,935 @@ const panelText =
   );
 
 
+const mazePlayer =
+  document.getElementById(
+    "maze-player"
+  );
+
+
 // ==========================================
-// ATUALIZA O TEXTO DO QUADRINHO
+// CONFIGURAÇÕES DO LABIRINTO
+// ==========================================
+
+/*
+  O JavaScript começa contando os quadrinhos
+  a partir de 0.
+
+  Portanto:
+
+  0 = quadrinho 1
+  1 = quadrinho 2
+  2 = quadrinho 3
+  3 = quadrinho 4
+  4 = quadrinho 5
+  5 = quadrinho 6
+  6 = quadrinho 7
+*/
+
+const MAZE_PANEL = 5;
+
+
+// ==========================================
+// POSIÇÃO INICIAL
+// ==========================================
+
+const MAZE_START = {
+  x: 385,
+  y: 45
+};
+
+
+// ==========================================
+// ÁREA FINAL DO LABIRINTO
+// ==========================================
+//
+// A saída fica na região inferior
+// central da imagem.
+//
+// A área foi deixada um pouco maior
+// para facilitar a chegada.
+//
+
+const MAZE_FINISH = {
+  xMin: 350,
+  xMax: 425,
+  yMin: 490,
+  yMax: 522
+};
+
+
+// ==========================================
+// TAMANHO DA BOLINHA
+// ==========================================
+//
+// Como a bolinha visual agora possui
+// 14px, usamos um raio menor também
+// para a detecção de colisão.
+//
+
+const PLAYER_RADIUS = 6;
+
+
+// ==========================================
+// CANVAS INVISÍVEL
+// ==========================================
+
+const mazeCanvas =
+  document.createElement(
+    "canvas"
+  );
+
+
+const mazeContext =
+  mazeCanvas.getContext(
+    "2d",
+    {
+      willReadFrequently: true
+    }
+  );
+
+
+let mazePixels = null;
+
+let mazeWidth = 0;
+
+let mazeHeight = 0;
+
+let mazeReady = false;
+
+
+// ==========================================
+// ESTADO DO JOGADOR
+// ==========================================
+
+let mazeDragging = false;
+
+let mazeCompleted = false;
+
+let mazeLastPosition = null;
+
+
+// ==========================================
+// PREPARA O LABIRINTO
+// ==========================================
+
+function prepareMaze() {
+
+  if (current !== MAZE_PANEL) {
+    return;
+  }
+
+
+  if (!img.complete) {
+    return;
+  }
+
+
+  mazeWidth =
+    img.naturalWidth;
+
+
+  mazeHeight =
+    img.naturalHeight;
+
+
+  if (
+    mazeWidth === 0 ||
+    mazeHeight === 0
+  ) {
+    return;
+  }
+
+
+  mazeCanvas.width =
+    mazeWidth;
+
+  mazeCanvas.height =
+    mazeHeight;
+
+
+  mazeContext.clearRect(
+    0,
+    0,
+    mazeWidth,
+    mazeHeight
+  );
+
+
+  mazeContext.drawImage(
+    img,
+    0,
+    0,
+    mazeWidth,
+    mazeHeight
+  );
+
+
+  mazePixels =
+    mazeContext.getImageData(
+      0,
+      0,
+      mazeWidth,
+      mazeHeight
+    ).data;
+
+
+  mazeReady = true;
+
+  mazeCompleted = false;
+
+
+  mazeLastPosition = {
+    x: MAZE_START.x,
+    y: MAZE_START.y
+  };
+
+
+  positionPlayer(
+    MAZE_START.x,
+    MAZE_START.y
+  );
+
+}
+
+
+// ==========================================
+// CONVERTE COORDENADAS DO MOUSE
+// PARA COORDENADAS DA IMAGEM
+// ==========================================
+
+function getImageCoordinates(
+  clientX,
+  clientY
+) {
+
+  const rect =
+    img.getBoundingClientRect();
+
+
+  const naturalWidth =
+    img.naturalWidth;
+
+  const naturalHeight =
+    img.naturalHeight;
+
+
+  if (
+    !naturalWidth ||
+    !naturalHeight
+  ) {
+    return null;
+  }
+
+
+  const scale =
+    Math.min(
+      rect.width / naturalWidth,
+      rect.height / naturalHeight
+    );
+
+
+  const displayedWidth =
+    naturalWidth * scale;
+
+
+  const displayedHeight =
+    naturalHeight * scale;
+
+
+  const offsetX =
+    (rect.width - displayedWidth) / 2;
+
+
+  const offsetY =
+    (rect.height - displayedHeight) / 2;
+
+
+  const x =
+    (
+      clientX -
+      rect.left -
+      offsetX
+    ) / scale;
+
+
+  const y =
+    (
+      clientY -
+      rect.top -
+      offsetY
+    ) / scale;
+
+
+  return {
+    x,
+    y,
+    scale
+  };
+
+}
+
+
+// ==========================================
+// POSICIONA A BOLINHA
+// ==========================================
+
+function positionPlayer(
+  imageX,
+  imageY
+) {
+
+  const rect =
+    img.getBoundingClientRect();
+
+
+  const naturalWidth =
+    img.naturalWidth;
+
+  const naturalHeight =
+    img.naturalHeight;
+
+
+  if (
+    !naturalWidth ||
+    !naturalHeight
+  ) {
+    return;
+  }
+
+
+  const scale =
+    Math.min(
+      rect.width / naturalWidth,
+      rect.height / naturalHeight
+    );
+
+
+  const displayedWidth =
+    naturalWidth * scale;
+
+
+  const displayedHeight =
+    naturalHeight * scale;
+
+
+  const offsetX =
+    (rect.width - displayedWidth) / 2;
+
+
+  const offsetY =
+    (rect.height - displayedHeight) / 2;
+
+
+  const stageRect =
+    stage.getBoundingClientRect();
+
+
+  const x =
+    (
+      rect.left -
+      stageRect.left +
+      offsetX +
+      imageX * scale
+    );
+
+
+  const y =
+    (
+      rect.top -
+      stageRect.top +
+      offsetY +
+      imageY * scale
+    );
+
+
+  mazePlayer.style.left =
+    `${x}px`;
+
+
+  mazePlayer.style.top =
+    `${y}px`;
+
+}
+
+
+// ==========================================
+// VERIFICA SE UM PIXEL É PAREDE
+// ==========================================
+
+function isBlackPixel(
+  x,
+  y
+) {
+
+  if (!mazePixels) {
+    return true;
+  }
+
+
+  if (
+    x < 0 ||
+    x >= mazeWidth ||
+    y < 0 ||
+    y >= mazeHeight
+  ) {
+    return true;
+  }
+
+
+  const pixelX =
+    Math.floor(x);
+
+  const pixelY =
+    Math.floor(y);
+
+
+  const index =
+    (
+      pixelY *
+      mazeWidth +
+      pixelX
+    ) * 4;
+
+
+  const red =
+    mazePixels[index];
+
+
+  const green =
+    mazePixels[index + 1];
+
+
+  const blue =
+    mazePixels[index + 2];
+
+
+  return (
+    red < 60 &&
+    green < 60 &&
+    blue < 60
+  );
+
+}
+
+
+// ==========================================
+// VERIFICA COLISÃO DA BOLINHA
+// ==========================================
+
+function playerHitsWall(
+  x,
+  y,
+  radius
+) {
+
+  const samples = 32;
+
+
+  for (
+    let i = 0;
+    i < samples;
+    i++
+  ) {
+
+    const angle =
+      (
+        Math.PI * 2 * i
+      ) / samples;
+
+
+    const testX =
+      x +
+      Math.cos(angle) *
+      radius;
+
+
+    const testY =
+      y +
+      Math.sin(angle) *
+      radius;
+
+
+    if (
+      isBlackPixel(
+        testX,
+        testY
+      )
+    ) {
+
+      return true;
+
+    }
+
+  }
+
+
+  /*
+    Também verifica o centro.
+  */
+
+  if (
+    isBlackPixel(
+      x,
+      y
+    )
+  ) {
+
+    return true;
+
+  }
+
+
+  return false;
+
+}
+
+
+// ==========================================
+// VERIFICA O CAMINHO ENTRE DOIS PONTOS
+// ==========================================
+
+function segmentHitsWall(
+  fromX,
+  fromY,
+  toX,
+  toY,
+  radius
+) {
+
+  const distance =
+    Math.hypot(
+      toX - fromX,
+      toY - fromY
+    );
+
+
+  const steps =
+    Math.max(
+      1,
+      Math.ceil(
+        distance / 3
+      )
+    );
+
+
+  for (
+    let i = 1;
+    i <= steps;
+    i++
+  ) {
+
+    const progress =
+      i / steps;
+
+
+    const x =
+      fromX +
+      (
+        toX - fromX
+      ) *
+      progress;
+
+
+    const y =
+      fromY +
+      (
+        toY - fromY
+      ) *
+      progress;
+
+
+    if (
+      playerHitsWall(
+        x,
+        y,
+        radius
+      )
+    ) {
+
+      return true;
+
+    }
+
+  }
+
+
+  return false;
+
+}
+
+
+// ==========================================
+// VERIFICA SE CHEGOU AO FINAL
+// ==========================================
+
+function reachedMazeEnd(
+  x,
+  y
+) {
+
+  return (
+    x >= MAZE_FINISH.xMin &&
+    x <= MAZE_FINISH.xMax &&
+    y >= MAZE_FINISH.yMin &&
+    y <= MAZE_FINISH.yMax
+  );
+
+}
+
+
+// ==========================================
+// GAME OVER
+// ==========================================
+
+function triggerGameOver() {
+
+  if (mazeCompleted) {
+    return;
+  }
+
+
+  mazeDragging = false;
+
+
+  mazePlayer.classList.remove(
+    "dragging"
+  );
+
+
+  setTimeout(() => {
+
+    window.location.href =
+      "gameover.html";
+
+  }, 100);
+
+}
+
+
+// ==========================================
+// CONCLUIU O LABIRINTO
+// ==========================================
+
+function completeMaze() {
+
+  /*
+    Impede que a função seja chamada
+    várias vezes.
+  */
+
+  if (mazeCompleted) {
+    return;
+  }
+
+
+  mazeCompleted = true;
+
+  mazeDragging = false;
+
+
+  mazePlayer.classList.remove(
+    "dragging"
+  );
+
+
+  /*
+    Pequena pausa para que a chegada
+    fique perceptível.
+
+    Depois:
+
+    current = 5
+
+    navigate(1)
+
+    passa para:
+
+    current = 6
+
+    que corresponde ao
+    quadrinho 7.
+  */
+
+  setTimeout(() => {
+
+    navigate(1);
+
+  }, 350);
+
+}
+
+
+// ==========================================
+// MOVE A BOLINHA
+// ==========================================
+
+function moveMazePlayer(
+  clientX,
+  clientY
+) {
+
+  if (
+    current !== MAZE_PANEL ||
+    !mazeDragging ||
+    !mazeReady ||
+    mazeCompleted
+  ) {
+    return;
+  }
+
+
+  const coordinates =
+    getImageCoordinates(
+      clientX,
+      clientY
+    );
+
+
+  if (!coordinates) {
+    return;
+  }
+
+
+  const {
+    x,
+    y,
+    scale
+  } = coordinates;
+
+
+  const radius =
+    PLAYER_RADIUS /
+    scale;
+
+
+  /*
+    Se sair completamente da imagem,
+    perde.
+  */
+
+  if (
+    x < 0 ||
+    y < 0 ||
+    x >= mazeWidth ||
+    y >= mazeHeight
+  ) {
+
+    triggerGameOver();
+
+    return;
+
+  }
+
+
+  /*
+    Verifica se já chegou à saída.
+
+    Esta verificação acontece antes
+    da colisão para garantir que a área
+    final seja reconhecida corretamente.
+  */
+
+  if (
+    reachedMazeEnd(
+      x,
+      y
+    )
+  ) {
+
+    mazeLastPosition = {
+      x,
+      y
+    };
+
+
+    positionPlayer(
+      x,
+      y
+    );
+
+
+    completeMaze();
+
+    return;
+
+  }
+
+
+  /*
+    Verifica todo o caminho entre
+    a posição anterior e a nova.
+  */
+
+  if (
+    mazeLastPosition &&
+    segmentHitsWall(
+      mazeLastPosition.x,
+      mazeLastPosition.y,
+      x,
+      y,
+      radius
+    )
+  ) {
+
+    triggerGameOver();
+
+    return;
+
+  }
+
+
+  /*
+    Atualiza a posição.
+  */
+
+  mazeLastPosition = {
+    x,
+    y
+  };
+
+
+  positionPlayer(
+    x,
+    y
+  );
+
+}
+
+
+// ==========================================
+// COMEÇA O ARRASTO
+// ==========================================
+
+mazePlayer.addEventListener(
+  "pointerdown",
+  (event) => {
+
+    if (
+      current !== MAZE_PANEL ||
+      !mazeReady ||
+      mazeCompleted
+    ) {
+      return;
+    }
+
+
+    mazeDragging = true;
+
+
+    mazePlayer.classList.add(
+      "dragging"
+    );
+
+
+    mazeLastPosition = {
+      x: MAZE_START.x,
+      y: MAZE_START.y
+    };
+
+
+    try {
+
+      mazePlayer.setPointerCapture(
+        event.pointerId
+      );
+
+    } catch (error) {
+
+      // Ignora se não houver
+      // suporte a pointer capture.
+
+    }
+
+
+    event.preventDefault();
+
+  }
+);
+
+
+// ==========================================
+// MOVIMENTO DO ARRASTO
+// ==========================================
+
+mazePlayer.addEventListener(
+  "pointermove",
+  (event) => {
+
+    if (!mazeDragging) {
+      return;
+    }
+
+
+    moveMazePlayer(
+      event.clientX,
+      event.clientY
+    );
+
+
+    event.preventDefault();
+
+  }
+);
+
+
+// ==========================================
+// TERMINA O ARRASTO
+// ==========================================
+
+function stopMazeDragging(
+  event
+) {
+
+  mazeDragging = false;
+
+
+  mazePlayer.classList.remove(
+    "dragging"
+  );
+
+
+  try {
+
+    mazePlayer.releasePointerCapture(
+      event.pointerId
+    );
+
+  } catch (error) {
+
+    // Ignora caso não exista
+    // pointer capture.
+
+  }
+
+}
+
+
+mazePlayer.addEventListener(
+  "pointerup",
+  stopMazeDragging
+);
+
+
+mazePlayer.addEventListener(
+  "pointercancel",
+  stopMazeDragging
+);
+
+
+// ==========================================
+// ATUALIZA O TEXTO
 // ==========================================
 
 function updatePanelText() {
-
-  /*
-    Remove todas as classes
-    anteriores do texto.
-  */
 
   panelText.className =
     "comic-text";
 
 
-  /*
-    Pega o texto correspondente
-    ao quadrinho atual.
-  */
-
   const text =
     panelTexts[current] || "";
 
-
-  /*
-    Se for o primeiro quadrinho,
-    não usamos o panel-text.
-
-    Os textos "Eu", "te",
-    "vi" e "lá" estão no HTML.
-  */
 
   if (current === 0) {
 
@@ -211,11 +1048,6 @@ function updatePanelText() {
   }
 
 
-  /*
-    Se não houver texto cadastrado,
-    não mostra nada.
-  */
-
   if (!text) {
 
     panelText.textContent = "";
@@ -225,31 +1057,6 @@ function updatePanelText() {
   }
 
 
-  /*
-    ========================================
-    PARTE IMPORTANTE
-    ========================================
-
-    Transforma cada \n em <br>.
-
-    Exemplo:
-
-    "Seu\nolhar\nanda\ncansado"
-
-    vira:
-
-    Seu
-    <br>
-    olhar
-    <br>
-    anda
-    <br>
-    cansado
-
-    Dessa maneira a quebra de linha
-    é obrigatória.
-  */
-
   panelText.innerHTML =
     text.replace(
       /\n/g,
@@ -257,27 +1064,10 @@ function updatePanelText() {
     );
 
 
-  /*
-    Adiciona a classe específica
-    de cada quadrinho.
-
-    current = 1
-    → text-panel-2
-
-    current = 2
-    → text-panel-3
-
-    etc.
-  */
-
   panelText.classList.add(
     `text-panel-${current + 1}`
   );
 
-
-  /*
-    Torna o texto visível.
-  */
 
   panelText.classList.add(
     "visible"
@@ -323,8 +1113,7 @@ function updateUI() {
 
 
   /*
-    Mostra os textos do primeiro
-    quadrinho somente nele.
+    Textos do primeiro quadrinho.
   */
 
   stage.classList.toggle(
@@ -334,11 +1123,40 @@ function updateUI() {
 
 
   /*
-    Atualiza o texto dos demais
-    quadrinhos.
+    Ativa o modo labirinto
+    somente no quadrinho 6.
+  */
+
+  stage.classList.toggle(
+    "maze-active",
+    current === MAZE_PANEL
+  );
+
+
+  /*
+    Atualiza os textos.
   */
 
   updatePanelText();
+
+
+  /*
+    Prepara o labirinto.
+  */
+
+  if (
+    current === MAZE_PANEL
+  ) {
+
+    prepareMaze();
+
+  } else {
+
+    mazeDragging = false;
+
+    mazeCompleted = false;
+
+  }
 
 }
 
@@ -347,21 +1165,23 @@ function updateUI() {
 // TROCA DE QUADRINHO
 // ==========================================
 
-function navigate(direction) {
+function navigate(
+  direction
+) {
 
   /*
-    Calcula qual será o próximo
-    quadrinho.
+    Durante o arrasto não permite
+    mudar manualmente de quadrinho.
   */
+
+  if (mazeDragging) {
+    return;
+  }
+
 
   const next =
     current + direction;
 
-
-  /*
-    Impede ultrapassar os limites
-    da história.
-  */
 
   if (
     next < 0 ||
@@ -373,45 +1193,22 @@ function navigate(direction) {
   }
 
 
-  /*
-    Começa o fade-out.
-  */
-
   img.classList.add(
     "fade-out"
   );
 
-
-  /*
-    Aguarda o final da animação
-    antes de trocar a imagem.
-  */
 
   setTimeout(() => {
 
     current = next;
 
 
-    /*
-      Troca a imagem.
-    */
-
     img.src =
       panels[current];
 
 
-    /*
-      Atualiza textos,
-      contador e botões.
-    */
-
     updateUI();
 
-
-    /*
-      Mostra novamente
-      a nova imagem.
-    */
 
     requestAnimationFrame(() => {
 
@@ -463,9 +1260,19 @@ document.addEventListener(
   (event) => {
 
     /*
-      Seta direita:
-      próximo quadrinho.
+      Durante o labirinto,
+      não permite passar de página
+      pelas setas.
     */
+
+    if (
+      current === MAZE_PANEL
+    ) {
+
+      return;
+
+    }
+
 
     if (
       event.key ===
@@ -476,11 +1283,6 @@ document.addEventListener(
 
     }
 
-
-    /*
-      Seta esquerda:
-      quadrinho anterior.
-    */
 
     if (
       event.key ===
@@ -496,19 +1298,31 @@ document.addEventListener(
 
 
 // ==========================================
-// INICIALIZAÇÃO
+// QUANDO A IMAGEM TERMINAR DE CARREGAR
 // ==========================================
 
-/*
-  Carrega o primeiro quadrinho.
-*/
+img.addEventListener(
+  "load",
+  () => {
+
+    if (
+      current === MAZE_PANEL
+    ) {
+
+      prepareMaze();
+
+    }
+
+  }
+);
+
+
+// ==========================================
+// INICIALIZAÇÃO
+// ==========================================
 
 img.src =
   panels[0];
 
-
-/*
-  Atualiza toda a interface.
-*/
 
 updateUI();
