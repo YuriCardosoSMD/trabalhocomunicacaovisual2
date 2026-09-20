@@ -36,7 +36,6 @@ body {
 
   font-weight: normal;
   font-style: normal;
-
   font-display: swap;
 }
 
@@ -48,20 +47,10 @@ body {
 #hq-stage {
   position: relative;
 
-  /*
-    A HQ ocupa aproximadamente 80%
-    da largura da tela.
-  */
   width: 80vw;
 
-  /*
-    Limite para telas muito grandes.
-  */
   max-width: 1200px;
 
-  /*
-    Proporção da área da HQ.
-  */
   aspect-ratio: 720 / 500;
 
   user-select: none;
@@ -83,9 +72,6 @@ body {
   width: 100%;
   height: 100%;
 
-  /*
-    Mantém a imagem inteira.
-  */
   object-fit: contain;
 
   display: block;
@@ -95,26 +81,18 @@ body {
 }
 
 
-/*
-  Estado utilizado durante
-  a troca de quadrinho.
-*/
 #panel-img.fade-out {
   opacity: 0;
 }
 
 
 /* =========================================
-   TEXTOS DO QUADRINHO
+   CONFIGURAÇÃO GERAL DOS TEXTOS
    ========================================= */
 
 .comic-text {
   position: absolute;
 
-  /*
-    O texto fica acima da imagem,
-    mas abaixo dos botões de navegação.
-  */
   z-index: 5;
 
   font-family:
@@ -125,24 +103,21 @@ body {
 
   font-weight: normal;
 
-  line-height: 1;
+  line-height: 1.15;
 
   pointer-events: none;
 
   /*
-    O tamanho acompanha
-    o tamanho da tela.
+    Tamanho responsivo.
   */
   font-size: clamp(
-    100px,
-    3.2vw,
+    80px,
+    2.8vw,
     32px
   );
 
   /*
-    Começam invisíveis.
-    O JavaScript mostra apenas
-    no primeiro quadrinho.
+    Os textos começam invisíveis.
   */
   opacity: 0;
 
@@ -151,17 +126,20 @@ body {
 }
 
 
-/*
-  Classe adicionada pelo JavaScript
-  quando estamos no primeiro quadrinho.
-*/
-#hq-stage.show-first-text .comic-text {
+/* =========================================
+   TEXTOS DO PRIMEIRO QUADRINHO
+   ========================================= */
+
+#hq-stage.show-first-text .text-eu,
+#hq-stage.show-first-text .text-te,
+#hq-stage.show-first-text .text-vi,
+#hq-stage.show-first-text .text-la {
   opacity: 1;
 }
 
 
 /* =========================================
-   POSIÇÃO DO "EU"
+   "EU"
    ========================================= */
 
 .text-eu {
@@ -171,7 +149,7 @@ body {
 
 
 /* =========================================
-   POSIÇÃO DO "TE"
+   "TE"
    ========================================= */
 
 .text-te {
@@ -181,7 +159,7 @@ body {
 
 
 /* =========================================
-   POSIÇÃO DO "VI"
+   "VI"
    ========================================= */
 
 .text-vi {
@@ -191,12 +169,177 @@ body {
 
 
 /* =========================================
-   POSIÇÃO DO "LA"
+   "LÁ"
    ========================================= */
 
 .text-la {
   right: 10%;
   top: 68%;
+}
+
+
+/* =========================================
+   TEXTO DOS OUTROS QUADRINHOS
+   ========================================= */
+
+#panel-text {
+  /*
+    Limita a largura para frases
+    grandes.
+  */
+  max-width: 65%;
+
+  /*
+    Sombra muito leve para melhorar
+    a leitura sobre a imagem.
+  */
+  text-shadow:
+    1px 1px 0 rgba(255, 255, 255, 0.45);
+
+  /*
+    Invisível inicialmente.
+  */
+  opacity: 0;
+}
+
+
+/*
+  Quando o JavaScript adiciona
+  a classe "visible", o texto aparece.
+*/
+
+#panel-text.visible {
+  opacity: 1;
+}
+
+
+/* =========================================
+   QUADRINHO 2
+   ========================================= */
+
+#panel-text.text-panel-2 {
+  right: 8%;
+  top: 12%;
+
+  max-width: 55%;
+}
+
+
+/* =========================================
+   QUADRINHO 3
+   "Seu
+    olhar
+    anda
+    cansado"
+   ========================================= */
+
+#panel-text.text-panel-3 {
+  right: 10%;
+  bottom: 13%;
+
+  /*
+    Como o JavaScript utiliza <br>,
+    podemos controlar exatamente
+    cada linha.
+  */
+
+  max-width: 55%;
+}
+
+
+/* =========================================
+   QUADRINHO 4
+   ========================================= */
+
+#panel-text.text-panel-4 {
+  right: 8%;
+  top: 10%;
+
+  max-width: 58%;
+}
+
+
+/* =========================================
+   QUADRINHO 5
+   ========================================= */
+
+#panel-text.text-panel-5 {
+  left: 7%;
+  bottom: 10%;
+
+  max-width: 65%;
+}
+
+
+/* =========================================
+   QUADRINHO 6
+   ========================================= */
+
+#panel-text.text-panel-6 {
+  right: 7%;
+  top: 10%;
+
+  max-width: 68%;
+}
+
+
+/* =========================================
+   QUADRINHO 7
+   ========================================= */
+
+#panel-text.text-panel-7 {
+  left: 7%;
+  top: 10%;
+
+  max-width: 60%;
+}
+
+
+/* =========================================
+   QUADRINHO 8
+   ========================================= */
+
+#panel-text.text-panel-8 {
+  right: 7%;
+  bottom: 12%;
+
+  max-width: 60%;
+}
+
+
+/* =========================================
+   QUADRINHO 9
+   ========================================= */
+
+#panel-text.text-panel-9 {
+  left: 8%;
+  bottom: 9%;
+
+  max-width: 68%;
+}
+
+
+/* =========================================
+   QUADRINHO 10
+   ========================================= */
+
+#panel-text.text-panel-10 {
+  right: 7%;
+  top: 9%;
+
+  max-width: 65%;
+}
+
+
+/* =========================================
+   QUADRINHO 11
+   ========================================= */
+
+#panel-text.text-panel-11 {
+  left: 7%;
+  bottom: 10%;
+
+  max-width: 65%;
 }
 
 
@@ -228,11 +371,6 @@ body {
     opacity 0.2s ease;
 }
 
-
-/*
-  Pequeno efeito visual ao passar
-  o mouse por cima.
-*/
 
 .nav-zone:hover {
   background: rgba(
@@ -296,11 +434,6 @@ body {
 }
 
 
-/*
-  Aumenta um pouco a seta
-  quando o mouse passa sobre ela.
- */
-
 .nav-zone:hover .arrow {
   transform: scale(1.12);
 
@@ -315,7 +448,7 @@ body {
 
 
 /* =========================================
-   ÍCONE SVG DA SETA
+   ÍCONE DA SETA
    ========================================= */
 
 .arrow svg {
@@ -344,7 +477,7 @@ body {
 
 
 /* =========================================
-   CONTADOR DE PÁGINA
+   CONTADOR
    ========================================= */
 
 #page-counter {
@@ -391,8 +524,7 @@ body {
   .nav-zone {
     width: 22%;
 
-    padding:
-      0 8px;
+    padding: 0 8px;
   }
 
 
@@ -409,15 +541,22 @@ body {
 
 
   .comic-text {
-    /*
-      Texto um pouco menor
-      em telas pequenas.
-    */
     font-size: clamp(
       15px,
       5vw,
       25px
     );
+  }
+
+
+  /*
+    Textos longos ocupam
+    um pouco mais de espaço
+    no celular.
+  */
+
+  #panel-text {
+    max-width: 75%;
   }
 
 
