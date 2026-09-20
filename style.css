@@ -1,0 +1,462 @@
+/* =========================================
+   CONFIGURAÇÕES GERAIS
+   ========================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+body {
+  background-color: #1a1008;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  min-height: 100vh;
+
+  font-family: Georgia, serif;
+
+  overflow: hidden;
+}
+
+
+/* =========================================
+   FONTE "I AM SEVENTEEN"
+   ========================================= */
+
+@font-face {
+  font-family: "I am Seventeen";
+
+  src: url("assets/fonts/I am Seventeen.ttf")
+    format("truetype");
+
+  font-weight: normal;
+  font-style: normal;
+
+  font-display: swap;
+}
+
+
+/* =========================================
+   CONTAINER PRINCIPAL DA HQ
+   ========================================= */
+
+#hq-stage {
+  position: relative;
+
+  /*
+    A HQ ocupa aproximadamente 80%
+    da largura da tela.
+  */
+  width: 80vw;
+
+  /*
+    Limite para telas muito grandes.
+  */
+  max-width: 1200px;
+
+  /*
+    Proporção da área da HQ.
+  */
+  aspect-ratio: 720 / 500;
+
+  user-select: none;
+
+  overflow: hidden;
+}
+
+
+/* =========================================
+   IMAGEM DO QUADRINHO
+   ========================================= */
+
+#panel-img {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  /*
+    Mantém a imagem inteira.
+  */
+  object-fit: contain;
+
+  display: block;
+
+  transition:
+    opacity 0.35s ease;
+}
+
+
+/*
+  Estado utilizado durante
+  a troca de quadrinho.
+*/
+#panel-img.fade-out {
+  opacity: 0;
+}
+
+
+/* =========================================
+   TEXTOS DO QUADRINHO
+   ========================================= */
+
+.comic-text {
+  position: absolute;
+
+  /*
+    O texto fica acima da imagem,
+    mas abaixo dos botões de navegação.
+  */
+  z-index: 5;
+
+  font-family:
+    "I am Seventeen",
+    cursive;
+
+  color: #111;
+
+  font-weight: normal;
+
+  line-height: 1;
+
+  pointer-events: none;
+
+  /*
+    O tamanho acompanha
+    o tamanho da tela.
+  */
+  font-size: clamp(
+    100px,
+    3.2vw,
+    32px
+  );
+
+  /*
+    Começam invisíveis.
+    O JavaScript mostra apenas
+    no primeiro quadrinho.
+  */
+  opacity: 0;
+
+  transition:
+    opacity 0.2s ease;
+}
+
+
+/*
+  Classe adicionada pelo JavaScript
+  quando estamos no primeiro quadrinho.
+*/
+#hq-stage.show-first-text .comic-text {
+  opacity: 1;
+}
+
+
+/* =========================================
+   POSIÇÃO DO "EU"
+   ========================================= */
+
+.text-eu {
+  left: 10%;
+  top: 17%;
+}
+
+
+/* =========================================
+   POSIÇÃO DO "TE"
+   ========================================= */
+
+.text-te {
+  left: 15%;
+  top: 39%;
+}
+
+
+/* =========================================
+   POSIÇÃO DO "VI"
+   ========================================= */
+
+.text-vi {
+  right: 15%;
+  top: 48%;
+}
+
+
+/* =========================================
+   POSIÇÃO DO "LA"
+   ========================================= */
+
+.text-la {
+  right: 10%;
+  top: 68%;
+}
+
+
+/* =========================================
+   ZONAS CLICÁVEIS
+   ========================================= */
+
+.nav-zone {
+  position: absolute;
+
+  top: 0;
+
+  height: 100%;
+
+  width: 25%;
+
+  cursor: pointer;
+
+  z-index: 10;
+
+  display: flex;
+
+  align-items: center;
+
+  padding: 0 12px;
+
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease;
+}
+
+
+/*
+  Pequeno efeito visual ao passar
+  o mouse por cima.
+*/
+
+.nav-zone:hover {
+  background: rgba(
+    255,
+    255,
+    255,
+    0.04
+  );
+}
+
+
+/* =========================================
+   LADO ESQUERDO
+   ========================================= */
+
+.nav-zone.left {
+  left: 0;
+
+  justify-content: flex-start;
+}
+
+
+/* =========================================
+   LADO DIREITO
+   ========================================= */
+
+.nav-zone.right {
+  right: 0;
+
+  justify-content: flex-end;
+}
+
+
+/* =========================================
+   SETAS
+   ========================================= */
+
+.arrow {
+  width: 36px;
+  height: 36px;
+
+  border:
+    2.5px solid
+    rgba(
+      220,
+      210,
+      185,
+      0.7
+    );
+
+  border-radius: 50%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+
+/*
+  Aumenta um pouco a seta
+  quando o mouse passa sobre ela.
+ */
+
+.nav-zone:hover .arrow {
+  transform: scale(1.12);
+
+  border-color:
+    rgba(
+      220,
+      210,
+      185,
+      1
+    );
+}
+
+
+/* =========================================
+   ÍCONE SVG DA SETA
+   ========================================= */
+
+.arrow svg {
+  width: 16px;
+  height: 16px;
+
+  fill:
+    rgba(
+      220,
+      210,
+      185,
+      0.85
+    );
+}
+
+
+/* =========================================
+   BOTÃO ESCONDIDO
+   ========================================= */
+
+.nav-zone.hidden {
+  pointer-events: none;
+
+  opacity: 0;
+}
+
+
+/* =========================================
+   CONTADOR DE PÁGINA
+   ========================================= */
+
+#page-counter {
+  position: absolute;
+
+  bottom: -28px;
+
+  left: 50%;
+
+  transform:
+    translateX(-50%);
+
+  color:
+    rgba(
+      200,
+      190,
+      165,
+      0.55
+    );
+
+  font-size: 11px;
+
+  letter-spacing: 0.12em;
+
+  pointer-events: none;
+}
+
+
+/* =========================================
+   CELULARES
+   ========================================= */
+
+@media (max-width: 600px) {
+
+  #hq-stage {
+    width: 90vw;
+
+    max-width: none;
+
+    aspect-ratio: 720 / 500;
+  }
+
+
+  .nav-zone {
+    width: 22%;
+
+    padding:
+      0 8px;
+  }
+
+
+  .arrow {
+    width: 30px;
+    height: 30px;
+  }
+
+
+  .arrow svg {
+    width: 14px;
+    height: 14px;
+  }
+
+
+  .comic-text {
+    /*
+      Texto um pouco menor
+      em telas pequenas.
+    */
+    font-size: clamp(
+      15px,
+      5vw,
+      25px
+    );
+  }
+
+
+  #page-counter {
+    bottom: -24px;
+
+    font-size: 10px;
+  }
+
+}
+
+
+/* =========================================
+   CELULARES MUITO PEQUENOS
+   ========================================= */
+
+@media (max-width: 380px) {
+
+  #hq-stage {
+    width: 92vw;
+  }
+
+
+  .arrow {
+    width: 26px;
+    height: 26px;
+
+    border-width: 2px;
+  }
+
+
+  .arrow svg {
+    width: 12px;
+    height: 12px;
+  }
+
+
+  .comic-text {
+    font-size: 16px;
+  }
+
+}
