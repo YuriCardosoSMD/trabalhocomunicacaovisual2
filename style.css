@@ -218,8 +218,8 @@ body {
    ========================================= */
 
 #panel-text.text-panel-2 {
-  right: 8%;
-  top: 12%;
+  right: 20%;
+  top: 40%;
 
   max-width: 55%;
 }
@@ -252,8 +252,8 @@ body {
    ========================================= */
 
 #panel-text.text-panel-4 {
-  right: 8%;
-  top: 10%;
+  left: 8%;
+  top: 30%;
 
   max-width: 58%;
 }
@@ -264,8 +264,8 @@ body {
    ========================================= */
 
 #panel-text.text-panel-5 {
-  left: 7%;
-  bottom: 10%;
+  right: 10%;
+  top: 10%;
 
   max-width: 65%;
 }

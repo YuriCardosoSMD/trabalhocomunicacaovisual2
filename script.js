@@ -52,7 +52,7 @@ const panelTexts = {
     Quadrinho 2
   */
 
-  1: "Você usa quase as mesmas roupas",
+  1: "Você usa \nquase as \nmesmas \nroupas",
 
 
   /*
@@ -69,14 +69,14 @@ const panelTexts = {
     Quadrinho 4
   */
 
-  3: "Desde então\nmuito tempo se passou",
+  3: "Desde então\nmuito tempo \nse passou",
 
 
   /*
     Quadrinho 5
   */
 
-  4: "Tempo o suficiente para lembrar\no porquê não nos falamos",
+  4: "Tempo o suficiente para lembrar o \nporquê não nos falamos",
 
 
   /*
