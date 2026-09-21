@@ -148,25 +148,6 @@ const MAZE_START = {
 
 
 // ==========================================
-// ÁREA FINAL DO LABIRINTO
-// ==========================================
-//
-// A saída fica na região inferior
-// central da imagem.
-//
-// A área foi deixada um pouco maior
-// para facilitar a chegada.
-//
-
-const MAZE_FINISH = {
-  xMin: 350,
-  xMax: 425,
-  yMin: 490,
-  yMax: 522
-};
-
-
-// ==========================================
 // TAMANHO DA BOLINHA
 // ==========================================
 //
@@ -672,15 +653,11 @@ function segmentHitsWall(
 // ==========================================
 
 function reachedMazeEnd(
-  x,
   y
 ) {
 
   return (
-    x >= MAZE_FINISH.xMin &&
-    x <= MAZE_FINISH.xMax &&
-    y >= MAZE_FINISH.yMin &&
-    y <= MAZE_FINISH.yMax
+    y >= mazeHeight - PLAYER_RADIUS
   );
 
 }
@@ -812,35 +789,12 @@ function moveMazePlayer(
 
 
   /*
-    Se sair completamente da imagem,
-    perde.
-  */
-
-  if (
-    x < 0 ||
-    y < 0 ||
-    x >= mazeWidth ||
-    y >= mazeHeight
-  ) {
-
-    triggerGameOver();
-
-    return;
-
-  }
-
-
-  /*
-    Verifica se já chegou à saída.
-
-    Esta verificação acontece antes
-    da colisão para garantir que a área
-    final seja reconhecida corretamente.
+    A saída fica na borda inferior.
+    Verifica antes de considerar a bolinha fora da imagem.
   */
 
   if (
     reachedMazeEnd(
-      x,
       y
     )
   ) {
@@ -858,6 +812,25 @@ function moveMazePlayer(
 
 
     completeMaze();
+
+    return;
+
+  }
+
+
+  /*
+    Se sair completamente da imagem,
+    perde.
+  */
+
+  if (
+    x < 0 ||
+    y < 0 ||
+    x >= mazeWidth ||
+    y >= mazeHeight
+  ) {
+
+    triggerGameOver();
 
     return;
 
@@ -1156,6 +1129,8 @@ function updateUI() {
 
     mazeCompleted = false;
 
+    mazeReady = false;
+
   }
 
 }
@@ -1309,7 +1284,11 @@ img.addEventListener(
       current === MAZE_PANEL
     ) {
 
-      prepareMaze();
+      requestAnimationFrame(() => {
+
+        prepareMaze();
+
+      });
 
     }
 
