@@ -115,8 +115,14 @@ const mazePlayer =
   );
 
 
+const sandLayer =
+  document.getElementById(
+    "sand-layer"
+  );
+
+
 // ==========================================
-// CONFIGURAÇÕES DO LABIRINTO
+// CONFIGURAÇÕES DA AMPULHETA
 // ==========================================
 
 /*
@@ -136,6 +142,8 @@ const mazePlayer =
 
 const MAZE_PANEL = 5;
 
+const SAND_PANEL = 6;
+
 
 // ==========================================
 // POSIÇÃO INICIAL
@@ -145,6 +153,27 @@ const MAZE_START = {
   x: 385,
   y: 45
 };
+
+
+const SAND_START = {
+  x: 177.5,
+  y: 18
+};
+
+
+function isChallengePanel() {
+  return (
+    current === MAZE_PANEL ||
+    current === SAND_PANEL
+  );
+}
+
+
+function getChallengeStart() {
+  return current === SAND_PANEL
+    ? SAND_START
+    : MAZE_START;
+}
 
 
 // ==========================================
@@ -197,6 +226,39 @@ let mazeCompleted = false;
 
 let mazeLastPosition = null;
 
+let sandGrains = [];
+
+let sandTimer = null;
+
+let sandPileHeight = 0;
+
+const SAND_TICK_MS = 120;
+
+const SAND_GRAIN_RADIUS = 3.5;
+
+const SAND_FALL_SPEED = 2.4;
+
+const SAND_PILE_RISE = 0.65;
+
+const SAND_GRAIN_COUNT = 72;
+
+const SAND_SIDE_MARGIN = 18;
+
+const SAND_SIDE_WIDTH = 122;
+
+const SAND_HOLE_Y = 205;
+
+const SAND_HOLE_LEFT_X = 151;
+
+const SAND_HOLE_RIGHT_X = 204;
+
+const SAND_EXIT_ZONES = [
+  {
+    left: 145,
+    right: 210
+  }
+];
+
 
 // ==========================================
 // PREPARA O LABIRINTO
@@ -204,7 +266,7 @@ let mazeLastPosition = null;
 
 function prepareMaze() {
 
-  if (current !== MAZE_PANEL) {
+  if (!isChallengePanel()) {
     return;
   }
 
@@ -277,17 +339,261 @@ function prepareMaze() {
 
   mazeCompleted = false;
 
+  if (current === SAND_PANEL) {
+    createSand();
+  } else {
+    stopSand();
+  }
+
+
+  const challengeStart =
+    getChallengeStart();
+
 
   mazeLastPosition = {
-    x: MAZE_START.x,
-    y: MAZE_START.y
+    x: challengeStart.x,
+    y: challengeStart.y
   };
 
 
   positionPlayer(
-    MAZE_START.x,
-    MAZE_START.y
+    challengeStart.x,
+    challengeStart.y
   );
+
+}
+
+
+// ==========================================
+// AREIA DA AMPULHETA
+// ==========================================
+
+function stopSand() {
+
+  if (sandTimer) {
+    clearInterval(sandTimer);
+    sandTimer = null;
+  }
+
+
+  sandGrains = [];
+  sandPileHeight = 0;
+  sandLayer.replaceChildren();
+
+}
+
+
+function createSand() {
+
+  stopSand();
+
+
+  for (
+    let i = 0;
+    i < SAND_GRAIN_COUNT;
+    i++
+  ) {
+
+    const leftSide = i % 2 === 0;
+    const columnOffset = (i * 37) % 105;
+    const x = leftSide
+      ? 28 + columnOffset
+      : mazeWidth - 28 - columnOffset;
+    const y = -((i * 53) % 180);
+    const element = document.createElement("span");
+
+
+    element.className = "sand-grain";
+    sandLayer.append(element);
+
+
+    sandGrains.push({
+      x,
+      y,
+      element,
+      vx: 0,
+      vy: SAND_FALL_SPEED
+    });
+
+  }
+
+
+  renderSand();
+
+  sandTimer = setInterval(
+    updateSand,
+    SAND_TICK_MS
+  );
+
+}
+
+
+function updateSand() {
+
+  if (
+    current !== SAND_PANEL ||
+    !mazeReady
+  ) {
+    stopSand();
+    return;
+  }
+
+
+  sandPileHeight = Math.min(
+    mazeHeight * 0.32,
+    sandPileHeight + SAND_PILE_RISE
+  );
+
+
+  const floorY =
+    mazeHeight - sandPileHeight - 7;
+
+
+  sandGrains.forEach((grain) => {
+
+    grain.vy = Math.min(
+      5.5,
+      grain.vy + 0.18
+    );
+
+    grain.y += grain.vy;
+
+
+    if (grain.y >= SAND_HOLE_Y) {
+      const holeX = grain.x < mazeWidth / 2
+        ? SAND_HOLE_LEFT_X
+        : SAND_HOLE_RIGHT_X;
+      const direction = holeX > grain.x ? 1 : -1;
+
+
+      grain.vx += direction * 0.12;
+      grain.vx *= 0.94;
+      grain.x += grain.vx;
+    }
+
+
+    const atBottomHole =
+      grain.y > mazeHeight - 18 &&
+      (
+        Math.abs(grain.x - SAND_HOLE_LEFT_X) < 13 ||
+        Math.abs(grain.x - SAND_HOLE_RIGHT_X) < 13
+      );
+
+
+    if (
+      grain.y >= floorY &&
+      !atBottomHole
+    ) {
+      grain.y = floorY;
+      grain.vy *= -0.18;
+    }
+
+
+    const leftLimit =
+      grain.x < mazeWidth / 2
+        ? SAND_SIDE_MARGIN
+        : mazeWidth - SAND_SIDE_MARGIN;
+    const rightLimit =
+      grain.x < mazeWidth / 2
+        ? SAND_SIDE_MARGIN + SAND_SIDE_WIDTH
+        : mazeWidth - SAND_SIDE_MARGIN - SAND_SIDE_WIDTH;
+
+
+    if (grain.y < SAND_HOLE_Y) {
+      grain.x = grain.x < mazeWidth / 2
+        ? Math.min(rightLimit, Math.max(leftLimit, grain.x))
+        : Math.max(rightLimit, Math.min(leftLimit, grain.x));
+    }
+
+  });
+
+
+  resolveSandCollisions();
+
+
+  sandGrains = sandGrains.filter((grain) => {
+    const escapedLeft =
+      grain.x < SAND_HOLE_LEFT_X + 10 &&
+      grain.x > SAND_HOLE_LEFT_X - 10 &&
+      grain.y > mazeHeight - 4;
+    const escapedRight =
+      grain.x < SAND_HOLE_RIGHT_X + 10 &&
+      grain.x > SAND_HOLE_RIGHT_X - 10 &&
+      grain.y > mazeHeight - 4;
+
+
+    if (escapedLeft || escapedRight) {
+      grain.element.remove();
+      return false;
+    }
+
+
+    return true;
+  });
+
+
+  renderSand();
+
+}
+
+
+function resolveSandCollisions() {
+
+  const minimumDistance =
+    SAND_GRAIN_RADIUS * 2 + 1;
+
+
+  for (
+    let firstIndex = 0;
+    firstIndex < sandGrains.length;
+    firstIndex++
+  ) {
+
+    for (
+      let secondIndex = firstIndex + 1;
+      secondIndex < sandGrains.length;
+      secondIndex++
+    ) {
+
+      const first = sandGrains[firstIndex];
+      const second = sandGrains[secondIndex];
+      const deltaX = second.x - first.x;
+      const deltaY = second.y - first.y;
+      const distance = Math.hypot(deltaX, deltaY);
+
+
+      if (
+        distance === 0 ||
+        distance >= minimumDistance
+      ) {
+        continue;
+      }
+
+
+      const push =
+        (minimumDistance - distance) / distance / 2;
+
+      first.x -= deltaX * push;
+      first.y -= deltaY * push;
+      second.x += deltaX * push;
+      second.y += deltaY * push;
+
+    }
+
+  }
+
+}
+
+
+function renderSand() {
+
+  sandGrains.forEach((grain) => {
+    positionElementAtImageCoordinates(
+      grain.element,
+      grain.x,
+      grain.y
+    );
+  });
 
 }
 
@@ -376,6 +682,44 @@ function getImageLayout() {
 }
 
 
+function positionElementAtImageCoordinates(
+  element,
+  imageX,
+  imageY
+) {
+
+  const layout = getImageLayout();
+
+
+  if (!layout) {
+    return;
+  }
+
+
+  const stageRect =
+    stage.getBoundingClientRect();
+
+
+  const x =
+    layout.rect.left -
+    stageRect.left +
+    layout.offsetX +
+    imageX * layout.scale;
+
+
+  const y =
+    layout.rect.top -
+    stageRect.top +
+    layout.offsetY +
+    imageY * layout.scale;
+
+
+  element.style.left = `${x}px`;
+  element.style.top = `${y}px`;
+
+}
+
+
 // ==========================================
 // POSICIONA A BOLINHA
 // ==========================================
@@ -389,7 +733,7 @@ function positionPlayer(
 
 
   if (!layout) {
-    if (current === MAZE_PANEL) {
+    if (isChallengePanel()) {
       requestAnimationFrame(() => {
         positionPlayer(imageX, imageY);
       });
@@ -399,34 +743,11 @@ function positionPlayer(
   }
 
 
-  const stageRect =
-    stage.getBoundingClientRect();
-
-
-  const x =
-    (
-      layout.rect.left -
-      stageRect.left +
-      layout.offsetX +
-      imageX * layout.scale
-    );
-
-
-  const y =
-    (
-      layout.rect.top -
-      stageRect.top +
-      layout.offsetY +
-      imageY * layout.scale
-    );
-
-
-  mazePlayer.style.left =
-    `${x}px`;
-
-
-  mazePlayer.style.top =
-    `${y}px`;
+  positionElementAtImageCoordinates(
+    mazePlayer,
+    imageX,
+    imageY
+  );
 
 }
 
@@ -563,6 +884,26 @@ function playerHitsWall(
 }
 
 
+function playerHitsSand(
+  x,
+  y,
+  radius
+) {
+
+  const collisionRadius =
+    radius + SAND_GRAIN_RADIUS;
+
+
+  return sandGrains.some((grain) => {
+    return Math.hypot(
+      grain.x - x,
+      grain.y - y
+    ) <= collisionRadius;
+  });
+
+}
+
+
 // ==========================================
 // VERIFICA O CAMINHO ENTRE DOIS PONTOS
 // ==========================================
@@ -622,6 +963,11 @@ function segmentHitsWall(
         x,
         y,
         radius
+      ) ||
+      playerHitsSand(
+        x,
+        y,
+        radius
       )
     ) {
 
@@ -642,11 +988,53 @@ function segmentHitsWall(
 // ==========================================
 
 function reachedMazeEnd(
+  x,
   y
 ) {
 
+  if (current === SAND_PANEL) {
+    const reachedExit =
+      SAND_EXIT_ZONES.some((zone) => {
+        return (
+          x >= zone.left &&
+          x <= zone.right
+        );
+      });
+
+
+    return (
+      reachedExit &&
+      y >= mazeHeight - PLAYER_RADIUS
+    );
+  }
+
   return (
     y >= mazeHeight - PLAYER_RADIUS
+  );
+
+}
+
+
+function sandBlocksExit(
+  x,
+  y
+) {
+
+  const isNearExit =
+    current === SAND_PANEL &&
+    SAND_EXIT_ZONES.some((zone) => {
+      return (
+        x >= zone.left &&
+        x <= zone.right
+      );
+    }) &&
+    y >= mazeHeight - 42;
+
+
+  return (
+    sandPileHeight > 18 &&
+    y >= mazeHeight - sandPileHeight - PLAYER_RADIUS &&
+    !isNearExit
   );
 
 }
@@ -711,21 +1099,26 @@ function completeMaze() {
     Pequena pausa para que a chegada
     fique perceptível.
 
-    Depois:
-
-    current = 5
-
-    navigate(1)
-
-    passa para:
-
-    current = 6
-
-    que corresponde ao
-    quadrinho 7.
+    No quadrinho 7, a conclusão salta para
+    algas7.gif para facilitar os testes.
   */
 
   setTimeout(() => {
+
+    if (current === SAND_PANEL) {
+      img.classList.add("fade-out");
+      current = panels.length - 1;
+      img.src = panels[current];
+      updateUI();
+
+
+      requestAnimationFrame(() => {
+        img.classList.remove("fade-out");
+      });
+
+      return;
+    }
+
 
     navigate(1);
 
@@ -744,7 +1137,7 @@ function moveMazePlayer(
 ) {
 
   if (
-    current !== MAZE_PANEL ||
+    !isChallengePanel() ||
     !mazeDragging ||
     !mazeReady ||
     mazeCompleted
@@ -784,6 +1177,7 @@ function moveMazePlayer(
 
   if (
     reachedMazeEnd(
+      x,
       y
     )
   ) {
@@ -804,6 +1198,14 @@ function moveMazePlayer(
 
     return;
 
+  }
+
+
+  if (
+    sandBlocksExit(x, y)
+  ) {
+    triggerGameOver();
+    return;
   }
 
 
@@ -876,7 +1278,7 @@ mazePlayer.addEventListener(
   (event) => {
 
     if (
-      current !== MAZE_PANEL ||
+      !isChallengePanel() ||
       !mazeReady ||
       mazeCompleted
     ) {
@@ -892,9 +1294,13 @@ mazePlayer.addEventListener(
     );
 
 
+    const challengeStart =
+      getChallengeStart();
+
+
     mazeLastPosition = {
-      x: MAZE_START.x,
-      y: MAZE_START.y
+      x: challengeStart.x,
+      y: challengeStart.y
     };
 
 
@@ -1091,7 +1497,7 @@ function updateUI() {
 
   stage.classList.toggle(
     "maze-active",
-    current === MAZE_PANEL
+    isChallengePanel()
   );
 
 
@@ -1107,7 +1513,7 @@ function updateUI() {
   */
 
   if (
-    current === MAZE_PANEL
+    isChallengePanel()
   ) {
 
     setTimeout(() => {
@@ -1123,6 +1529,8 @@ function updateUI() {
     mazeCompleted = false;
 
     mazeReady = false;
+
+    stopSand();
 
   }
 
@@ -1234,7 +1642,7 @@ document.addEventListener(
     */
 
     if (
-      current === MAZE_PANEL
+      isChallengePanel()
     ) {
 
       return;
@@ -1274,7 +1682,7 @@ img.addEventListener(
   () => {
 
     if (
-      current === MAZE_PANEL
+      isChallengePanel()
     ) {
 
       setTimeout(() => {
@@ -1293,7 +1701,7 @@ img.addEventListener(
 function refreshMazePlayerPosition() {
 
   if (
-    current === MAZE_PANEL &&
+    isChallengePanel() &&
     mazeReady &&
     mazeLastPosition
   ) {

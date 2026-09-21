@@ -1,4 +1,3 @@
-```css
 /* =========================================
    CONFIGURAÇÕES GERAIS
    ========================================= */
@@ -350,6 +349,44 @@ body {
 }
 
 
+#sand-layer {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 15;
+
+  pointer-events: none;
+
+  overflow: hidden;
+
+  display: none;
+}
+
+
+#hq-stage.maze-active #sand-layer {
+  display: block;
+}
+
+
+.sand-grain {
+  position: absolute;
+
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: #c59a45;
+
+  border: 1px solid #6d4d1f;
+
+  box-shadow: 0 0 2px rgba(255, 229, 155, 0.8);
+
+  transform: translate(-50%, -50%);
+}
+
+
 #maze-player.dragging {
   cursor: grabbing;
 
@@ -360,8 +397,8 @@ body {
 
 
 /*
-   A bolinha aparece somente
-   no quadrinho 6.
+  A ampulheta aparece somente
+  no quadrinho 7.
 */
 
 #hq-stage.maze-active #maze-player {
@@ -641,4 +678,3 @@ body {
     height: 12px;
   }
 }
-```
