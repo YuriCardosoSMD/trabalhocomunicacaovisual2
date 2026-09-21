@@ -1,164 +1,50 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HQ Digital Interativa</title>
-
   <link rel="stylesheet" href="style.css?v=4">
 </head>
-
 <body>
-
   <main id="hq-stage">
+    
+    <!-- Imagem principal do quadrinho atual -->
+    <img id="panel-img" src="" alt="Quadrinho" draggable="false">
 
-    <!-- =========================================
-         IMAGEM DO QUADRINHO
-         ========================================= -->
+    <!-- Camadas de texto exclusivas da primeira cena (Quad 1) -->
+    <div class="comic-text text-eu" aria-hidden="true">Eu</div>
+    <div class="comic-text text-te" aria-hidden="true">te</div>
+    <div class="comic-text text-vi" aria-hidden="true">vi</div>
+    <div class="comic-text text-la" aria-hidden="true">lá</div>
 
-    <img
-      id="panel-img"
-      src=""
-      alt="Quadrinho"
-      draggable="false"
-    >
+    <!-- Contêiner dinâmico que recebe os textos das demais cenas via JavaScript -->
+    <div id="panel-text" class="comic-text" aria-hidden="true"></div>
 
+    <!-- Elementos do minigame (Labirinto e Ampulheta) -->
+    <div id="sand-layer" aria-hidden="true"></div>
+    <div id="maze-player" aria-label="Arraste a bolinha pelo labirinto"></div>
 
-    <!-- =========================================
-         TEXTOS DO PRIMEIRO QUADRINHO
-         ========================================= -->
-
-    <div
-      class="comic-text text-eu"
-      aria-hidden="true"
-    >
-      Eu
-    </div>
-
-    <div
-      class="comic-text text-te"
-      aria-hidden="true"
-    >
-      te
-    </div>
-
-    <div
-      class="comic-text text-vi"
-      aria-hidden="true"
-    >
-      vi
-    </div>
-
-    <div
-      class="comic-text text-la"
-      aria-hidden="true"
-    >
-      lá
-    </div>
-
-
-    <!-- =========================================
-         TEXTO DOS OUTROS QUADRINHOS
-         ========================================= -->
-
-    <div
-      id="panel-text"
-      class="comic-text"
-      aria-hidden="true"
-    ></div>
-
-
-        <!-- =========================================
-          AREIA E JOGADOR DA AMPULHETA
-          APARECEM SOMENTE NO QUADRINHO 7
-          ========================================= -->
-
-        <div
-       id="sand-layer"
-       aria-hidden="true"
-        ></div>
-
-    <div
-      id="maze-player"
-      aria-label="Arraste a bolinha pelo labirinto"
-    ></div>
-
-
-    <!-- =========================================
-         BOTÃO / ZONA ESQUERDA
-         ========================================= -->
-
-    <div
-      class="nav-zone left hidden"
-      id="btn-prev"
-      aria-label="Quadrinho anterior"
-    >
-
+    <!-- Botões de navegação lateral -->
+    <div class="nav-zone left hidden" id="btn-prev" aria-label="Quadrinho anterior">
       <div class="arrow">
-
-        <svg
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-
-          <path
-            d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
-          />
-
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
         </svg>
-
       </div>
-
     </div>
-
-
-    <!-- =========================================
-         BOTÃO / ZONA DIREITA
-         ========================================= -->
-
-    <div
-      class="nav-zone right"
-      id="btn-next"
-      aria-label="Próximo quadrinho"
-    >
-
+    <div class="nav-zone right" id="btn-next" aria-label="Próximo quadrinho">
       <div class="arrow">
-
-        <svg
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-
-          <path
-            d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"
-          />
-
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
         </svg>
-
       </div>
-
     </div>
 
-
-    <!-- =========================================
-         CONTADOR
-         ========================================= -->
-
+    <!-- Indicador textual da página atual (Ex: 1 / 12) -->
     <div id="page-counter"></div>
-
+    
   </main>
-
-
   <script src="script.js?v=4"></script>
-
 </body>
-
 </html>

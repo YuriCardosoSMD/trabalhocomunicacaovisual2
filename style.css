@@ -1,680 +1,236 @@
 /* =========================================
-   CONFIGURAÇÕES GERAIS
-   ========================================= */
-
+   RESET E CONFIGURAÇÕES GERAIS
+========================================= */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-
 body {
   background-color: #1a1008;
-
   display: flex;
   justify-content: center;
   align-items: center;
-
   min-height: 100vh;
-
   font-family: Georgia, serif;
-
   overflow: hidden;
 }
 
-
 /* =========================================
-   FONTE "I AM SEVENTEEN"
-   ========================================= */
-
+   FONTES PERSONALIZADAS
+========================================= */
 @font-face {
   font-family: "I am Seventeen";
-
-  src: url("assets/fonts/I am Seventeen.ttf")
-    format("truetype");
-
+  src: url("assets/fonts/I am Seventeen.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
-
   font-display: swap;
 }
 
-
 /* =========================================
    CONTAINER PRINCIPAL DA HQ
-   ========================================= */
-
+========================================= */
 #hq-stage {
   position: relative;
-
   width: 80vw;
   max-width: 1200px;
-
   aspect-ratio: 720 / 500;
-
   user-select: none;
-
   overflow: hidden;
 }
 
-
-/* =========================================
-   IMAGEM DO QUADRINHO
-   ========================================= */
-
 #panel-img {
   position: absolute;
-
   top: 0;
   left: 0;
-
   width: 100%;
   height: 100%;
-
   object-fit: contain;
-
   display: block;
-
   transition: opacity 0.35s ease;
-
   pointer-events: none;
 }
-
 
 #panel-img.fade-out {
   opacity: 0;
 }
 
-
 /* =========================================
-   CONFIGURAÇÃO GERAL DOS TEXTOS
-   ========================================= */
-
+   TEXTOS DA HQ E POSICIONAMENTO
+========================================= */
 .comic-text {
   position: absolute;
-
   z-index: 5;
-
-  font-family:
-    "I am Seventeen",
-    cursive;
-
+  font-family: "I am Seventeen", cursive;
   color: #111;
-
   font-weight: normal;
-
   line-height: 1.15;
-
   pointer-events: none;
-
-  font-size: clamp(
-    16px,
-    2.8vw,
-    32px
-  );
-
+  font-size: clamp(16px, 2.8vw, 32px);
   opacity: 0;
-
   transition: opacity 0.2s ease;
 }
 
-
-/* =========================================
-   TEXTOS DO PRIMEIRO QUADRINHO
-   ========================================= */
-
+/* Textos da primeira cena */
 #hq-stage.show-first-text .text-eu,
 #hq-stage.show-first-text .text-te,
 #hq-stage.show-first-text .text-vi,
-#hq-stage.show-first-text .text-la {
-  opacity: 1;
-}
+#hq-stage.show-first-text .text-la { opacity: 1; }
 
+.text-eu { left: 10%; top: 17%; }
+.text-te { left: 15%; top: 39%; }
+.text-vi { right: 15%; top: 48%; }
+.text-la { right: 10%; top: 68%; }
 
-/* =========================================
-   "EU"
-   ========================================= */
-
-.text-eu {
-  left: 10%;
-  top: 17%;
-}
-
-
-/* =========================================
-   "TE"
-   ========================================= */
-
-.text-te {
-  left: 15%;
-  top: 39%;
-}
-
-
-/* =========================================
-   "VI"
-   ========================================= */
-
-.text-vi {
-  right: 15%;
-  top: 48%;
-}
-
-
-/* =========================================
-   "LÁ"
-   ========================================= */
-
-.text-la {
-  right: 10%;
-  top: 68%;
-}
-
-
-/* =========================================
-   TEXTO DOS OUTROS QUADRINHOS
-   ========================================= */
-
+/* Layout base dos textos dinâmicos (Cena 2 em diante) */
 #panel-text {
   max-width: 65%;
-
-  text-shadow:
-    1px 1px 0 rgba(255, 255, 255, 0.45);
-
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);
   opacity: 0;
 }
+#panel-text.visible { opacity: 1; }
 
-
-#panel-text.visible {
-  opacity: 1;
-}
-
-
-/* =========================================
-   QUADRINHO 2
-   ========================================= */
-
-#panel-text.text-panel-2 {
-  right: 20%;
-  top: 40%;
-
-  max-width: 55%;
-}
-
+/* Posições dinâmicas para cada quadrinho */
+#panel-text.text-panel-2 { right: 20%; top: 40%; max-width: 55%; }
+#panel-text.text-panel-3 { right: 10%; bottom: 13%; max-width: 55%; }
+#panel-text.text-panel-4 { left: 8%; top: 30%; max-width: 58%; }
+#panel-text.text-panel-5 { right: 10%; top: 10%; max-width: 65%; }
+#panel-text.text-panel-6 { right: 7%; top: 10%; max-width: 68%; }
+#panel-text.text-panel-7 { left: 7%; top: 10%; max-width: 60%; }
+#panel-text.text-panel-8 { right: 7%; bottom: 12%; max-width: 60%; }
+#panel-text.text-panel-9 { left: 8%; bottom: 9%; max-width: 68%; }
+#panel-text.text-panel-10 { right: 7%; top: 9%; max-width: 65%; }
+#panel-text.text-panel-11 { left: 7%; bottom: 10%; max-width: 65%; }
 
 /* =========================================
-   QUADRINHO 3
-   ========================================= */
-
-#panel-text.text-panel-3 {
-  right: 10%;
-  bottom: 13%;
-
-  max-width: 55%;
-}
-
-
-/* =========================================
-   QUADRINHO 4
-   ========================================= */
-
-#panel-text.text-panel-4 {
-  left: 8%;
-  top: 30%;
-
-  max-width: 58%;
-}
-
-
-/* =========================================
-   QUADRINHO 5
-   ========================================= */
-
-#panel-text.text-panel-5 {
-  right: 10%;
-  top: 10%;
-
-  max-width: 65%;
-}
-
-
-/* =========================================
-   QUADRINHO 6
-   ========================================= */
-
-#panel-text.text-panel-6 {
-  right: 7%;
-  top: 10%;
-
-  max-width: 68%;
-}
-
-
-/* =========================================
-   QUADRINHO 7
-   ========================================= */
-
-#panel-text.text-panel-7 {
-  left: 7%;
-  top: 10%;
-
-  max-width: 60%;
-}
-
-
-/* =========================================
-   QUADRINHO 8
-   ========================================= */
-
-#panel-text.text-panel-8 {
-  right: 7%;
-  bottom: 12%;
-
-  max-width: 60%;
-}
-
-
-/* =========================================
-   QUADRINHO 9
-   ========================================= */
-
-#panel-text.text-panel-9 {
-  left: 8%;
-  bottom: 9%;
-
-  max-width: 68%;
-}
-
-
-/* =========================================
-   QUADRINHO 10
-   ========================================= */
-
-#panel-text.text-panel-10 {
-  right: 7%;
-  top: 9%;
-
-  max-width: 65%;
-}
-
-
-/* =========================================
-   QUADRINHO 11
-   ========================================= */
-
-#panel-text.text-panel-11 {
-  left: 7%;
-  bottom: 10%;
-
-  max-width: 65%;
-}
-
-
-/* =========================================
-   BOLINHA DO LABIRINTO
-   ========================================= */
-
+   ELEMENTOS INTERATIVOS (LABIRINTO/AREIA)
+========================================= */
 #maze-player {
   position: absolute;
-
   z-index: 20;
-
-  /*
-    DIMINUÍDA:
-    antes: 18px
-    agora: 14px
-  */
-  width: 18px;
-  height: 18px;
-
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-
   background-color: #d84a3a;
-
   border: 2px solid #fff;
-
-  box-shadow:
-    0 0 0 2px #111,
-    0 0 8px rgba(255, 255, 255, 0.9);
-
-  transform:
-    translate(-50%, -50%);
-
-  cursor: grab;
-
-  touch-action: none;
-
-  display: none;
-}
-
-
-#sand-layer {
-  position: absolute;
-
-  inset: 0;
-
-  z-index: 15;
-
-  pointer-events: none;
-
-  overflow: hidden;
-
-  display: none;
-}
-
-
-#hq-stage.maze-active #sand-layer {
-  display: block;
-}
-
-
-.sand-grain {
-  position: absolute;
-
-  width: 7px;
-  height: 7px;
-
-  border-radius: 50%;
-
-  background: #c59a45;
-
-  border: 1px solid #6d4d1f;
-
-  box-shadow: 0 0 2px rgba(255, 229, 155, 0.8);
-
+  box-shadow: 0 0 0 2px #111, 0 0 8px rgba(255, 255, 255, 0.9);
   transform: translate(-50%, -50%);
+  cursor: grab;
+  touch-action: none;
+  display: none;
 }
-
 
 #maze-player.dragging {
   cursor: grabbing;
-
-  transform:
-    translate(-50%, -50%)
-    scale(1.08);
+  transform: translate(-50%, -50%) scale(1.08);
 }
 
-
-/*
-  A ampulheta aparece somente
-  no quadrinho 7.
-*/
-
-#hq-stage.maze-active #maze-player {
-  display: block;
+#sand-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  overflow: hidden;
+  display: none;
 }
 
+/* Mostra elementos dinâmicos apenas na classe maze-active */
+#hq-stage.maze-active #sand-layer,
+#hq-stage.maze-active #maze-player { display: block; }
+
+.sand-grain {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c59a45;
+  border: 1px solid #6d4d1f;
+  box-shadow: 0 0 2px rgba(255, 229, 155, 0.8);
+  transform: translate(-50%, -50%);
+}
 
 /* =========================================
-   ZONAS CLICÁVEIS
-   ========================================= */
-
+   NAVEGAÇÃO E CONTADOR
+========================================= */
 .nav-zone {
   position: absolute;
-
   top: 0;
-
   height: 100%;
-
   width: 25%;
-
   cursor: pointer;
-
   z-index: 10;
-
   display: flex;
-
   align-items: center;
-
   padding: 0 12px;
-
-  transition:
-    background 0.2s ease,
-    opacity 0.2s ease;
+  transition: background 0.2s ease, opacity 0.2s ease;
 }
 
+.nav-zone:hover { background: rgba(255, 255, 255, 0.04); }
+.nav-zone.left { left: 0; justify-content: flex-start; }
+.nav-zone.right { right: 0; justify-content: flex-end; }
+.nav-zone.hidden { pointer-events: none; opacity: 0; }
 
-.nav-zone:hover {
-  background: rgba(
-    255,
-    255,
-    255,
-    0.04
-  );
+/* Oculta navegação durante o desafio do labirinto */
+#hq-stage.maze-active .nav-zone {
+  pointer-events: none;
+  opacity: 0;
 }
-
-
-/* =========================================
-   LADO ESQUERDO
-   ========================================= */
-
-.nav-zone.left {
-  left: 0;
-
-  justify-content: flex-start;
-}
-
-
-/* =========================================
-   LADO DIREITO
-   ========================================= */
-
-.nav-zone.right {
-  right: 0;
-
-  justify-content: flex-end;
-}
-
-
-/* =========================================
-   SETAS
-   ========================================= */
 
 .arrow {
   width: 36px;
   height: 36px;
-
-  border:
-    2.5px solid
-    rgba(
-      220,
-      210,
-      185,
-      0.7
-    );
-
+  border: 2.5px solid rgba(220, 210, 185, 0.7);
   border-radius: 50%;
-
   display: flex;
-
   align-items: center;
   justify-content: center;
-
-  transition:
-    transform 0.2s ease,
-    border-color 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
-
 
 .nav-zone:hover .arrow {
   transform: scale(1.12);
-
-  border-color:
-    rgba(
-      220,
-      210,
-      185,
-      1
-    );
+  border-color: rgba(220, 210, 185, 1);
 }
-
-
-/* =========================================
-   ÍCONE DA SETA
-   ========================================= */
 
 .arrow svg {
   width: 16px;
   height: 16px;
-
-  fill:
-    rgba(
-      220,
-      210,
-      185,
-      0.85
-    );
+  fill: rgba(220, 210, 185, 0.85);
 }
-
-
-/* =========================================
-   BOTÃO ESCONDIDO
-   ========================================= */
-
-.nav-zone.hidden {
-  pointer-events: none;
-
-  opacity: 0;
-}
-
-
-/*
-   Durante o labirinto,
-   as setas ficam desativadas.
-*/
-
-#hq-stage.maze-active .nav-zone {
-  pointer-events: none;
-
-  opacity: 0;
-}
-
-
-/* =========================================
-   CONTADOR
-   ========================================= */
 
 #page-counter {
   position: absolute;
-
   bottom: -28px;
-
   left: 50%;
-
-  transform:
-    translateX(-50%);
-
-  color:
-    rgba(
-      200,
-      190,
-      165,
-      0.55
-    );
-
+  transform: translateX(-50%);
+  color: rgba(200, 190, 165, 0.55);
   font-size: 11px;
-
   letter-spacing: 0.12em;
-
   pointer-events: none;
 }
 
-
 /* =========================================
-   CELULARES
-   ========================================= */
-
+   RESPONSIVIDADE (MEDIA QUERIES)
+========================================= */
 @media (max-width: 600px) {
-
   #hq-stage {
     width: 90vw;
-
     max-width: none;
-
-    aspect-ratio: 720 / 500;
   }
-
-
-  .nav-zone {
-    width: 22%;
-
-    padding: 0 8px;
-  }
-
-
-  .arrow {
-    width: 30px;
-    height: 30px;
-  }
-
-
-  .arrow svg {
-    width: 14px;
-    height: 14px;
-  }
-
-
-  .comic-text {
-    font-size: clamp(
-      15px,
-      5vw,
-      25px
-    );
-  }
-
-
-  #panel-text {
-    max-width: 75%;
-  }
-
-
-  #page-counter {
-    bottom: -24px;
-
-    font-size: 10px;
-  }
-
-
-  #maze-player {
-    width: 13px;
-    height: 13px;
-  }
+  .nav-zone { width: 22%; padding: 0 8px; }
+  .arrow { width: 30px; height: 30px; }
+  .arrow svg { width: 14px; height: 14px; }
+  .comic-text { font-size: clamp(15px, 5vw, 25px); }
+  #panel-text { max-width: 75%; }
+  #page-counter { bottom: -24px; font-size: 10px; }
+  #maze-player { width: 13px; height: 13px; }
 }
 
-
-/* =========================================
-   CELULARES MUITO PEQUENOS
-   ========================================= */
-
 @media (max-width: 380px) {
-
-  #hq-stage {
-    width: 92vw;
-  }
-
-
-  .arrow {
-    width: 26px;
-    height: 26px;
-
-    border-width: 2px;
-  }
-
-
-  .arrow svg {
-    width: 12px;
-    height: 12px;
-  }
-
-
-  .comic-text {
-    font-size: 16px;
-  }
-
-
-  #maze-player {
-    width: 12px;
-    height: 12px;
-  }
+  #hq-stage { width: 92vw; }
+  .arrow { width: 26px; height: 26px; border-width: 2px; }
+  .arrow svg { width: 12px; height: 12px; }
+  .comic-text { font-size: 16px; }
+  #maze-player { width: 12px; height: 12px; }
 }
