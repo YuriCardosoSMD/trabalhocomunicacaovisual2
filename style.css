@@ -326,17 +326,18 @@ body {
     antes: 18px
     agora: 14px
   */
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
 
   border-radius: 50%;
 
-  background-color: #111;
+  background-color: #d84a3a;
 
-  border: 2px solid #e0e0c0;
+  border: 2px solid #fff;
 
   box-shadow:
-    0 0 0 1px #111;
+    0 0 0 2px #111,
+    0 0 8px rgba(255, 255, 255, 0.9);
 
   transform:
     translate(-50%, -50%);

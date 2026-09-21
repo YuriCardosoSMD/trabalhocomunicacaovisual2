@@ -209,7 +209,17 @@ function prepareMaze() {
   }
 
 
-  if (!img.complete) {
+  if (
+    !img.complete ||
+    !img.naturalWidth ||
+    !img.naturalHeight
+  ) {
+
+    setTimeout(
+      prepareMaze,
+      50
+    );
+
     return;
   }
 
@@ -292,6 +302,42 @@ function getImageCoordinates(
   clientY
 ) {
 
+  const layout = getImageLayout();
+
+
+  if (!layout) {
+    return null;
+  }
+
+
+  const x =
+    (
+      clientX -
+      layout.rect.left -
+      layout.offsetX
+    ) / layout.scale;
+
+
+  const y =
+    (
+      clientY -
+      layout.rect.top -
+      layout.offsetY
+    ) / layout.scale;
+
+
+  return {
+    x,
+    y,
+    scale: layout.scale
+  };
+
+}
+
+
+// Retorna a area real da imagem dentro do palco, considerando contain.
+function getImageLayout() {
+
   const rect =
     img.getBoundingClientRect();
 
@@ -305,7 +351,9 @@ function getImageCoordinates(
 
   if (
     !naturalWidth ||
-    !naturalHeight
+    !naturalHeight ||
+    !rect.width ||
+    !rect.height
   ) {
     return null;
   }
@@ -318,42 +366,11 @@ function getImageCoordinates(
     );
 
 
-  const displayedWidth =
-    naturalWidth * scale;
-
-
-  const displayedHeight =
-    naturalHeight * scale;
-
-
-  const offsetX =
-    (rect.width - displayedWidth) / 2;
-
-
-  const offsetY =
-    (rect.height - displayedHeight) / 2;
-
-
-  const x =
-    (
-      clientX -
-      rect.left -
-      offsetX
-    ) / scale;
-
-
-  const y =
-    (
-      clientY -
-      rect.top -
-      offsetY
-    ) / scale;
-
-
   return {
-    x,
-    y,
-    scale
+    rect,
+    scale,
+    offsetX: (rect.width - naturalWidth * scale) / 2,
+    offsetY: (rect.height - naturalHeight * scale) / 2
   };
 
 }
@@ -368,46 +385,18 @@ function positionPlayer(
   imageY
 ) {
 
-  const rect =
-    img.getBoundingClientRect();
+  const layout = getImageLayout();
 
 
-  const naturalWidth =
-    img.naturalWidth;
+  if (!layout) {
+    if (current === MAZE_PANEL) {
+      requestAnimationFrame(() => {
+        positionPlayer(imageX, imageY);
+      });
+    }
 
-  const naturalHeight =
-    img.naturalHeight;
-
-
-  if (
-    !naturalWidth ||
-    !naturalHeight
-  ) {
     return;
   }
-
-
-  const scale =
-    Math.min(
-      rect.width / naturalWidth,
-      rect.height / naturalHeight
-    );
-
-
-  const displayedWidth =
-    naturalWidth * scale;
-
-
-  const displayedHeight =
-    naturalHeight * scale;
-
-
-  const offsetX =
-    (rect.width - displayedWidth) / 2;
-
-
-  const offsetY =
-    (rect.height - displayedHeight) / 2;
 
 
   const stageRect =
@@ -416,19 +405,19 @@ function positionPlayer(
 
   const x =
     (
-      rect.left -
+      layout.rect.left -
       stageRect.left +
-      offsetX +
-      imageX * scale
+      layout.offsetX +
+      imageX * layout.scale
     );
 
 
   const y =
     (
-      rect.top -
+      layout.rect.top -
       stageRect.top +
-      offsetY +
-      imageY * scale
+      layout.offsetY +
+      imageY * layout.scale
     );
 
 
@@ -1121,7 +1110,11 @@ function updateUI() {
     current === MAZE_PANEL
   ) {
 
-    prepareMaze();
+    setTimeout(() => {
+
+      prepareMaze();
+
+    }, 0);
 
   } else {
 
@@ -1284,13 +1277,61 @@ img.addEventListener(
       current === MAZE_PANEL
     ) {
 
-      requestAnimationFrame(() => {
+      setTimeout(() => {
 
         prepareMaze();
 
-      });
+      }, 0);
 
     }
+
+  }
+);
+
+
+// Mantem a bolinha alinhada quando o palco muda de tamanho.
+function refreshMazePlayerPosition() {
+
+  if (
+    current === MAZE_PANEL &&
+    mazeReady &&
+    mazeLastPosition
+  ) {
+    positionPlayer(
+      mazeLastPosition.x,
+      mazeLastPosition.y
+    );
+  }
+
+}
+
+
+if (typeof ResizeObserver !== "undefined") {
+
+  const stageResizeObserver =
+    new ResizeObserver(
+      refreshMazePlayerPosition
+    );
+
+
+  stageResizeObserver.observe(stage);
+
+}
+
+
+window.addEventListener(
+  "resize",
+  refreshMazePlayerPosition
+);
+
+
+window.addEventListener(
+  "orientationchange",
+  () => {
+
+    requestAnimationFrame(
+      refreshMazePlayerPosition
+    );
 
   }
 );
