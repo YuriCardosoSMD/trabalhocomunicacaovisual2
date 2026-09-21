@@ -51,12 +51,9 @@ const MAZE_PANEL = 5; // Equivalente ao quadrinho 6
 const SAND_PANEL = 6; // Equivalente ao quadrinho 7
 const MAZE_START = { x: 385, y: 45 };
 const SAND_START = { x: 177.5, y: 18 };
-const PLAYER_RADIUS = 6; // Área de detecção de colisão do jogador
+const PLAYER_RADIUS = 3; // Hitbox reduzida, bastante tolerante a esbarrões
 
-// Configurações do canvas invisível (utilizado para ler colisões com o cenário)
-const mazeCanvas = document.createElement("canvas");
-const mazeContext = mazeCanvas.getContext("2d", { willReadFrequently: true });
-let mazePixels = null;
+// Propriedades do labirinto em escala
 let mazeWidth = 0;
 let mazeHeight = 0;
 let mazeReady = false;
@@ -83,24 +80,84 @@ const SAND_HOLE_RIGHT_X = 204;
 const SAND_EXIT_ZONES = [{ left: 145, right: 210 }];
 
 // ==========================================
+// COLISÃO BASEADA NOS PIXELS REAIS DO QUADRINHO
+// ==========================================
+// Em vez de retângulos "chutados" (que não acompanhavam o desenho real
+// do labirinto/ampulheta), lemos a própria imagem: traços escuros viram
+// parede, fundo claro vira caminho livre. Isso garante que a colisão
+// sempre corresponda exatamente ao que está desenhado na tela, mesmo que
+// as imagens sejam substituídas ou redesenhadas no futuro.
+const WALL_CELL = 8; // tamanho (em px da imagem original) de cada célula da grade
+const WALL_DENSITY_THRESHOLD = 0.35; // fração de pixels escuros para considerar "parede"
+const maskCanvas = document.createElement("canvas");
+const maskCtx = maskCanvas.getContext("2d", { willReadFrequently: true });
+
+let wallGrid = null;
+let wallGridCols = 0;
+let wallGridRows = 0;
+
+function buildWallGrid() {
+  wallGrid = null;
+
+  if (!mazeWidth || !mazeHeight) return;
+
+  maskCanvas.width = mazeWidth;
+  maskCanvas.height = mazeHeight;
+  maskCtx.clearRect(0, 0, mazeWidth, mazeHeight);
+
+  let data;
+  try {
+    maskCtx.drawImage(img, 0, 0, mazeWidth, mazeHeight);
+    data = maskCtx.getImageData(0, 0, mazeWidth, mazeHeight).data;
+  } catch (error) {
+    // Se as imagens forem abertas via file:// (sem servidor local), o
+    // canvas pode ficar "tainted" e getImageData falha por segurança.
+    // Nesse caso, avisamos no console em vez de travar o jogo.
+    console.warn("Não foi possível ler os pixels do quadrinho para calcular colisão (rode o projeto por um servidor local, não abrindo o HTML direto do disco).", error);
+    return;
+  }
+
+  wallGridCols = Math.ceil(mazeWidth / WALL_CELL);
+  wallGridRows = Math.ceil(mazeHeight / WALL_CELL);
+
+  const cellCount = wallGridCols * wallGridRows;
+  const darkCount = new Int32Array(cellCount);
+  const totalCount = new Int32Array(cellCount);
+
+  for (let y = 0; y < mazeHeight; y++) {
+    const cellRow = (y / WALL_CELL) | 0;
+    for (let x = 0; x < mazeWidth; x++) {
+      const cellCol = (x / WALL_CELL) | 0;
+      const cellIndex = cellRow * wallGridCols + cellCol;
+      const pixelIndex = (y * mazeWidth + x) * 4;
+      const luminance = (data[pixelIndex] + data[pixelIndex + 1] + data[pixelIndex + 2]) / 3;
+      totalCount[cellIndex]++;
+      if (luminance < 128) darkCount[cellIndex]++;
+    }
+  }
+
+  const grid = new Uint8Array(cellCount);
+  for (let i = 0; i < cellCount; i++) {
+    grid[i] = (darkCount[i] / Math.max(totalCount[i], 1)) > WALL_DENSITY_THRESHOLD ? 1 : 0;
+  }
+
+  wallGrid = grid;
+}
+
+// ==========================================
 // FUNÇÕES UTILITÁRIAS DE CENA
 // ==========================================
-
-// Retorna se o quadrinho atual exige a interação do minigame
 function isChallengePanel() {
   return (current === MAZE_PANEL || current === SAND_PANEL);
 }
 
-// Retorna as coordenadas iniciais dependendo de qual desafio está ativo
 function getChallengeStart() {
   return current === SAND_PANEL ? SAND_START : MAZE_START;
 }
 
 // ==========================================
-// PREPARAÇÃO DO LABIRINTO (CANVAS INVISÍVEL)
+// PREPARAÇÃO DO LABIRINTO
 // ==========================================
-
-// Gera um mapa de pixels invisível a partir da imagem atual para calcular colisões com as paredes escuras
 function prepareMaze() {
   if (!isChallengePanel()) return;
   
@@ -116,21 +173,9 @@ function prepareMaze() {
     setTimeout(prepareMaze, 50);
     return;
   }
-  
-  mazeCanvas.width = mazeWidth;
-  mazeCanvas.height = mazeHeight;
-  mazeContext.clearRect(0, 0, mazeWidth, mazeHeight);
-  
-  try {
-    mazeContext.drawImage(img, 0, 0, mazeWidth, mazeHeight);
-    // Em navegadores abrindo arquivo local (file://), isso geraria erro de CORS e travaria o jogo.
-    // O try-catch salva o código e mantém a bolinha na posição correta, mas desativa as colisões.
-    mazePixels = mazeContext.getImageData(0, 0, mazeWidth, mazeHeight).data;
-  } catch (error) {
-    console.warn("Acesso aos pixels bloqueado (CORS em modo file://). O labirinto não terá colisões com paredes escuras, mas continuará funcional.");
-    mazePixels = null;
-  }
-  
+
+  buildWallGrid();
+
   mazeReady = true;
   mazeCompleted = false;
   
@@ -143,7 +188,6 @@ function prepareMaze() {
   const challengeStart = getChallengeStart();
   mazeLastPosition = { x: challengeStart.x, y: challengeStart.y };
   
-  // Aguarda um frame para que a DOM seja pintada corretamente pelo navegador
   requestAnimationFrame(() => {
     positionPlayer(challengeStart.x, challengeStart.y);
   });
@@ -152,8 +196,6 @@ function prepareMaze() {
 // ==========================================
 // LÓGICA DA AREIA E FÍSICA
 // ==========================================
-
-// Interrompe e limpa a renderização da areia
 function stopSand() {
   if (sandTimer) {
     clearInterval(sandTimer);
@@ -164,7 +206,6 @@ function stopSand() {
   sandLayer.replaceChildren();
 }
 
-// Inicia a geração das partículas de areia
 function createSand() {
   stopSand();
   for (let i = 0; i < SAND_GRAIN_COUNT; i++) {
@@ -176,15 +217,12 @@ function createSand() {
     element.className = "sand-grain";
     sandLayer.append(element);
     
-    sandGrains.push({
-      x, y, element, vx: 0, vy: SAND_FALL_SPEED
-    });
+    sandGrains.push({ x, y, element, vx: 0, vy: SAND_FALL_SPEED });
   }
   renderSand();
   sandTimer = setInterval(updateSand, SAND_TICK_MS);
 }
 
-// Atualiza a gravidade e o acúmulo das partículas a cada tick
 function updateSand() {
   if (current !== SAND_PANEL || !mazeReady) {
     stopSand();
@@ -239,7 +277,6 @@ function updateSand() {
   renderSand();
 }
 
-// Afasta as partículas para não se sobreporem umas às outras
 function resolveSandCollisions() {
   const minimumDistance = SAND_GRAIN_RADIUS * 2 + 1;
   for (let firstIndex = 0; firstIndex < sandGrains.length; firstIndex++) {
@@ -261,34 +298,25 @@ function resolveSandCollisions() {
   }
 }
 
-// Aplica as posições visuais atualizadas para a areia
 function renderSand() {
-  sandGrains.forEach((grain) => {
-    positionElementAtImageCoordinates(grain.element, grain.x, grain.y);
-  });
+  sandGrains.forEach((grain) => positionElementAtImageCoordinates(grain.element, grain.x, grain.y));
 }
 
 // ==========================================
-// CONVERSÃO E POSICIONAMENTO DA TELA (CANVAS VS MOUSE)
+// CONVERSÃO E POSICIONAMENTO DA TELA
 // ==========================================
-
-// Mapeia coordenadas reais de clique/toque para o grid da imagem
 function getImageCoordinates(clientX, clientY) {
   const layout = getImageLayout();
   if (!layout) return null;
-  
   const x = (clientX - layout.rect.left - layout.offsetX) / layout.scale;
   const y = (clientY - layout.rect.top - layout.offsetY) / layout.scale;
-  
   return { x, y, scale: layout.scale };
 }
 
-// Calcula as escalas e o deslocamento causados pelo "object-fit: contain"
 function getImageLayout() {
   const rect = img.getBoundingClientRect();
   const naturalWidth = img.naturalWidth;
   const naturalHeight = img.naturalHeight;
-  
   if (!naturalWidth || !naturalHeight || !rect.width || !rect.height) return null;
   
   const scale = Math.min(rect.width / naturalWidth, rect.height / naturalHeight);
@@ -300,7 +328,6 @@ function getImageLayout() {
   };
 }
 
-// Alinha qualquer elemento DOM (bolinha ou areia) baseado no mapa do labirinto
 function positionElementAtImageCoordinates(element, imageX, imageY) {
   const layout = getImageLayout();
   if (!layout) return;
@@ -313,13 +340,10 @@ function positionElementAtImageCoordinates(element, imageX, imageY) {
   element.style.top = `${y}px`;
 }
 
-// Atribui a posição específica à bolinha
 function positionPlayer(imageX, imageY) {
   const layout = getImageLayout();
   if (!layout) {
-    if (isChallengePanel()) {
-      requestAnimationFrame(() => positionPlayer(imageX, imageY));
-    }
+    if (isChallengePanel()) requestAnimationFrame(() => positionPlayer(imageX, imageY));
     return;
   }
   positionElementAtImageCoordinates(mazePlayer, imageX, imageY);
@@ -329,60 +353,47 @@ function positionPlayer(imageX, imageY) {
 // LÓGICA DE COLISÃO DO JOGADOR
 // ==========================================
 
-// Identifica se uma coordenada cruza uma parede do labirinto (pixels pretos no canvas)
-function isBlackPixel(x, y) {
-  // Retorna falso imediatamente se a leitura de pixels foi bloqueada pelo navegador (CORS local)
-  if (!mazePixels) return false; 
-  
+function isWall(x, y) {
+  // Saiu dos limites da imagem inteira
   if (x < 0 || x >= mazeWidth || y < 0 || y >= mazeHeight) return true;
-  
-  const pixelX = Math.floor(x);
-  const pixelY = Math.floor(y);
-  const index = (pixelY * mazeWidth + pixelX) * 4;
-  const red = mazePixels[index];
-  const green = mazePixels[index + 1];
-  const blue = mazePixels[index + 2];
-  const alpha = mazePixels[index + 3];
-  
-  // Ignora se for um fundo transparente
-  if (alpha < 50) return false;
-  
-  return (red < 60 && green < 60 && blue < 60);
+
+  // Sem a grade de colisão (ex.: falha ao ler os pixels), não bloqueia
+  // para não travar o jogo — mas nesse caso vale checar o console.
+  if (!wallGrid) return false;
+
+  const cellCol = (x / WALL_CELL) | 0;
+  const cellRow = (y / WALL_CELL) | 0;
+  if (cellCol < 0 || cellCol >= wallGridCols || cellRow < 0 || cellRow >= wallGridRows) return true;
+
+  return wallGrid[cellRow * wallGridCols + cellCol] === 1;
 }
 
-// Checa bordas e centro da bolinha para validar impacto em paredes
 function playerHitsWall(x, y, radius) {
-  const samples = 32;
+  const samples = 16; 
   for (let i = 0; i < samples; i++) {
     const angle = (Math.PI * 2 * i) / samples;
     const testX = x + Math.cos(angle) * radius;
     const testY = y + Math.sin(angle) * radius;
-    if (isBlackPixel(testX, testY)) return true;
+    if (isWall(testX, testY)) return true;
   }
-  return isBlackPixel(x, y);
+  return isWall(x, y);
 }
 
-// Checa impacto da bolinha com os grãos de areia
 function playerHitsSand(x, y, radius) {
   const collisionRadius = radius + SAND_GRAIN_RADIUS;
-  return sandGrains.some((grain) => {
-    return Math.hypot(grain.x - x, grain.y - y) <= collisionRadius;
-  });
+  return sandGrains.some((grain) => Math.hypot(grain.x - x, grain.y - y) <= collisionRadius);
 }
 
-// Analisa a linha do movimento rápido do arrasto para garantir que as paredes não sejam atravessadas
 function segmentHitsWall(fromX, fromY, toX, toY, radius) {
   const distance = Math.hypot(toX - fromX, toY - fromY);
-  const steps = Math.max(1, Math.ceil(distance / 3));
+  const steps = Math.max(1, Math.ceil(distance / 5)); 
   
   for (let i = 1; i <= steps; i++) {
     const progress = i / steps;
     const x = fromX + (toX - fromX) * progress;
     const y = fromY + (toY - fromY) * progress;
     
-    if (playerHitsWall(x, y, radius) || playerHitsSand(x, y, radius)) {
-      return true;
-    }
+    if (playerHitsWall(x, y, radius) || playerHitsSand(x, y, radius)) return true;
   }
   return false;
 }
@@ -390,7 +401,6 @@ function segmentHitsWall(fromX, fromY, toX, toY, radius) {
 // ==========================================
 // CONDIÇÕES DE VITÓRIA / DERROTA
 // ==========================================
-
 function reachedMazeEnd(x, y) {
   if (current === SAND_PANEL) {
     const reachedExit = SAND_EXIT_ZONES.some((zone) => x >= zone.left && x <= zone.right);
@@ -408,6 +418,7 @@ function triggerGameOver() {
   if (mazeCompleted) return;
   mazeDragging = false;
   mazePlayer.classList.remove("dragging");
+  
   setTimeout(() => {
     window.location.href = "gameover.html";
   }, 100);
@@ -435,7 +446,6 @@ function completeMaze() {
 // ==========================================
 // CONTROLES INTERATIVOS
 // ==========================================
-
 function moveMazePlayer(clientX, clientY) {
   if (!isChallengePanel() || !mazeDragging || !mazeReady || mazeCompleted) return;
   
@@ -475,10 +485,7 @@ mazePlayer.addEventListener("pointerdown", (event) => {
   const challengeStart = getChallengeStart();
   mazeLastPosition = { x: challengeStart.x, y: challengeStart.y };
   
-  try {
-    mazePlayer.setPointerCapture(event.pointerId);
-  } catch (error) {}
-  
+  try { mazePlayer.setPointerCapture(event.pointerId); } catch (error) {}
   event.preventDefault();
 });
 
@@ -491,9 +498,7 @@ mazePlayer.addEventListener("pointermove", (event) => {
 function stopMazeDragging(event) {
   mazeDragging = false;
   mazePlayer.classList.remove("dragging");
-  try {
-    mazePlayer.releasePointerCapture(event.pointerId);
-  } catch (error) {}
+  try { mazePlayer.releasePointerCapture(event.pointerId); } catch (error) {}
 }
 
 mazePlayer.addEventListener("pointerup", stopMazeDragging);
@@ -502,7 +507,6 @@ mazePlayer.addEventListener("pointercancel", stopMazeDragging);
 // ==========================================
 // RENDERIZAÇÃO DA INTERFACE (TEXTOS E CENA)
 // ==========================================
-
 function updatePanelText() {
   panelText.className = "comic-text";
   const text = panelTexts[current] || "";
@@ -527,20 +531,18 @@ function updateUI() {
   updatePanelText();
   
   if (isChallengePanel()) {
-    // Usando prepareMaze direto; o timeout de segurança interno cuidará do load async
     prepareMaze();
   } else {
     mazeDragging = false;
     mazeCompleted = false;
     mazeReady = false;
+    wallGrid = null;
     stopSand();
   }
 }
 
-// Troca central de quadrinhos com transição
 function navigate(direction) {
   if (mazeDragging) return;
-  
   const next = current + direction;
   if (next < 0 || next >= panels.length) return;
   
@@ -556,17 +558,15 @@ function navigate(direction) {
 // ==========================================
 // EVENTOS DE DISPARO
 // ==========================================
-
 btnPrev.addEventListener("click", () => navigate(-1));
 btnNext.addEventListener("click", () => navigate(1));
 
 document.addEventListener("keydown", (event) => {
-  if (isChallengePanel()) return; // Bloqueia skip durante o minigame
+  if (isChallengePanel()) return; 
   if (event.key === "ArrowRight") navigate(1);
   if (event.key === "ArrowLeft") navigate(-1);
 });
 
-// Garante o alinhamento correto caso o usuário gire o celular ou mude a tela
 function refreshMazePlayerPosition() {
   if (isChallengePanel() && mazeReady && mazeLastPosition) {
     positionPlayer(mazeLastPosition.x, mazeLastPosition.y);
@@ -580,9 +580,7 @@ if (typeof ResizeObserver !== "undefined") {
   window.addEventListener("resize", refreshMazePlayerPosition);
 }
 
-window.addEventListener("orientationchange", () => {
-  requestAnimationFrame(refreshMazePlayerPosition);
-});
+window.addEventListener("orientationchange", () => requestAnimationFrame(refreshMazePlayerPosition));
 
 // ==========================================
 // INICIALIZAÇÃO START
