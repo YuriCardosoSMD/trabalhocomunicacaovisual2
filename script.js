@@ -112,13 +112,25 @@ function prepareMaze() {
   mazeWidth = img.naturalWidth;
   mazeHeight = img.naturalHeight;
   
-  if (mazeWidth === 0 || mazeHeight === 0) return;
+  if (mazeWidth === 0 || mazeHeight === 0) {
+    setTimeout(prepareMaze, 50);
+    return;
+  }
   
   mazeCanvas.width = mazeWidth;
   mazeCanvas.height = mazeHeight;
   mazeContext.clearRect(0, 0, mazeWidth, mazeHeight);
-  mazeContext.drawImage(img, 0, 0, mazeWidth, mazeHeight);
-  mazePixels = mazeContext.getImageData(0, 0, mazeWidth, mazeHeight).data;
+  
+  try {
+    mazeContext.drawImage(img, 0, 0, mazeWidth, mazeHeight);
+    // Em navegadores abrindo arquivo local (file://), isso geraria erro de CORS e travaria o jogo.
+    // O try-catch salva o código e mantém a bolinha na posição correta, mas desativa as colisões.
+    mazePixels = mazeContext.getImageData(0, 0, mazeWidth, mazeHeight).data;
+  } catch (error) {
+    console.warn("Acesso aos pixels bloqueado (CORS em modo file://). O labirinto não terá colisões com paredes escuras, mas continuará funcional.");
+    mazePixels = null;
+  }
+  
   mazeReady = true;
   mazeCompleted = false;
   
@@ -130,7 +142,11 @@ function prepareMaze() {
   
   const challengeStart = getChallengeStart();
   mazeLastPosition = { x: challengeStart.x, y: challengeStart.y };
-  positionPlayer(challengeStart.x, challengeStart.y);
+  
+  // Aguarda um frame para que a DOM seja pintada corretamente pelo navegador
+  requestAnimationFrame(() => {
+    positionPlayer(challengeStart.x, challengeStart.y);
+  });
 }
 
 // ==========================================
@@ -315,7 +331,9 @@ function positionPlayer(imageX, imageY) {
 
 // Identifica se uma coordenada cruza uma parede do labirinto (pixels pretos no canvas)
 function isBlackPixel(x, y) {
-  if (!mazePixels) return true;
+  // Retorna falso imediatamente se a leitura de pixels foi bloqueada pelo navegador (CORS local)
+  if (!mazePixels) return false; 
+  
   if (x < 0 || x >= mazeWidth || y < 0 || y >= mazeHeight) return true;
   
   const pixelX = Math.floor(x);
@@ -324,6 +342,10 @@ function isBlackPixel(x, y) {
   const red = mazePixels[index];
   const green = mazePixels[index + 1];
   const blue = mazePixels[index + 2];
+  const alpha = mazePixels[index + 3];
+  
+  // Ignora se for um fundo transparente
+  if (alpha < 50) return false;
   
   return (red < 60 && green < 60 && blue < 60);
 }
@@ -505,7 +527,8 @@ function updateUI() {
   updatePanelText();
   
   if (isChallengePanel()) {
-    setTimeout(() => prepareMaze(), 0);
+    // Usando prepareMaze direto; o timeout de segurança interno cuidará do load async
+    prepareMaze();
   } else {
     mazeDragging = false;
     mazeCompleted = false;
@@ -541,10 +564,6 @@ document.addEventListener("keydown", (event) => {
   if (isChallengePanel()) return; // Bloqueia skip durante o minigame
   if (event.key === "ArrowRight") navigate(1);
   if (event.key === "ArrowLeft") navigate(-1);
-});
-
-img.addEventListener("load", () => {
-  if (isChallengePanel()) setTimeout(() => prepareMaze(), 0);
 });
 
 // Garante o alinhamento correto caso o usuário gire o celular ou mude a tela

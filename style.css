@@ -213,11 +213,23 @@ body {
 /* =========================================
    RESPONSIVIDADE (MEDIA QUERIES)
 ========================================= */
-@media (max-width: 600px) {
+
+/* Tablets em geral (iPad, Samsung Galaxy Tab, etc) */
+@media (max-width: 1024px) {
   #hq-stage {
-    width: 90vw;
+    width: 95vw;
     max-width: none;
   }
+  .nav-zone { width: 22%; padding: 0 10px; }
+  .arrow { width: 34px; height: 34px; }
+  .arrow svg { width: 15px; height: 15px; }
+  .comic-text { font-size: clamp(16px, 3.5vw, 28px); }
+  #panel-text { max-width: 70%; }
+  #maze-player { width: 16px; height: 16px; }
+}
+
+/* Celulares */
+@media (max-width: 600px) {
   .nav-zone { width: 22%; padding: 0 8px; }
   .arrow { width: 30px; height: 30px; }
   .arrow svg { width: 14px; height: 14px; }
@@ -227,6 +239,7 @@ body {
   #maze-player { width: 13px; height: 13px; }
 }
 
+/* Celulares muito pequenos */
 @media (max-width: 380px) {
   #hq-stage { width: 92vw; }
   .arrow { width: 26px; height: 26px; border-width: 2px; }
