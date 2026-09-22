@@ -69,6 +69,7 @@ let sandTimer = null;
 let sandSpawnCounter = 0;
 const SAND_TICK_MS = 64;
 const SAND_GRAIN_RADIUS = 3.5;
+const SAND_SPAWN_WALL_MARGIN = 3;
 const SAND_FALL_SPEED = 0.42;
 const SAND_GRAVITY = 0.2;
 const SAND_INITIAL_COUNT = 24;
@@ -235,9 +236,9 @@ function spawnSandGrain() {
     x = (bounds.minX + Math.random() * (bounds.maxX - bounds.minX)) * mazeWidth;
     y = (0.1 + Math.random() * 0.1) * mazeHeight;
     attempts++;
-  } while ((!sandPointInChamber(x, y, chamber) || sandGrainHitsWall(x, y)) && attempts < 80);
+  } while ((!sandPointInChamber(x, y, chamber) || sandGrainHitsWall(x, y, SAND_GRAIN_RADIUS + SAND_SPAWN_WALL_MARGIN)) && attempts < 80);
 
-  if (!sandPointInChamber(x, y, chamber) || sandGrainHitsWall(x, y)) return;
+  if (!sandPointInChamber(x, y, chamber) || sandGrainHitsWall(x, y, SAND_GRAIN_RADIUS + SAND_SPAWN_WALL_MARGIN)) return;
 
   const element = document.createElement("span");
   element.className = "sand-grain";
@@ -303,11 +304,11 @@ function sandPositionAllowed(x, y) {
   return sandPointInChamber(x, y, SAND_LEFT_CHAMBER) || sandPointInChamber(x, y, SAND_RIGHT_CHAMBER);
 }
 
-function sandGrainHitsWall(x, y) {
+function sandGrainHitsWall(x, y, radius = SAND_GRAIN_RADIUS) {
   const samples = 8;
   for (let i = 0; i < samples; i++) {
     const angle = (Math.PI * 2 * i) / samples;
-    if (!sandPositionAllowed(x + Math.cos(angle) * SAND_GRAIN_RADIUS, y + Math.sin(angle) * SAND_GRAIN_RADIUS)) return true;
+    if (!sandPositionAllowed(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius)) return true;
   }
   return !sandPositionAllowed(x, y);
 }
@@ -323,26 +324,8 @@ function moveSandGrain(grain) {
   }
 
   grain.vy = 0;
-  const towardCenter = grain.x < mazeWidth / 2 ? 1 : -1;
-  const slideDirections = [towardCenter, -towardCenter];
-
-  for (const direction of slideDirections) {
-    const slideX = grain.x + direction * 1.6;
-    const slideY = grain.y + 1.2;
-    if (!sandGrainHitsWall(slideX, slideY)) {
-      grain.x = slideX;
-      grain.y = slideY;
-      grain.vy = SAND_FALL_SPEED;
-      return;
-    }
-  }
-
-  for (const direction of slideDirections) {
-    const slideX = grain.x + direction * 1.6;
-    if (!sandGrainHitsWall(slideX, grain.y)) {
-      grain.x = slideX;
-      return;
-    }
+  if (nextY > mazeHeight - SAND_GRAIN_RADIUS) {
+    grain.y = mazeHeight - SAND_GRAIN_RADIUS;
   }
 }
 
@@ -394,6 +377,17 @@ function resolveSandCollisions() {
               first.y = firstY;
               second.x = secondX;
               second.y = secondY;
+              return;
+            }
+
+            const horizontalDirection = first.x <= second.x ? 1 : -1;
+            const horizontalPush = Math.max(push, 0.8);
+            const separatedFirstX = first.x - horizontalDirection * horizontalPush;
+            const separatedSecondX = second.x + horizontalDirection * horizontalPush;
+
+            if (!sandGrainHitsWall(separatedFirstX, first.y) && !sandGrainHitsWall(separatedSecondX, second.y)) {
+              first.x = separatedFirstX;
+              second.x = separatedSecondX;
             }
           });
         }

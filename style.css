@@ -144,9 +144,9 @@ body {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #c59a45;
-  border: 1px solid #6d4d1f;
-  box-shadow: 0 0 2px rgba(255, 229, 155, 0.8);
+  background: #111;
+  border: 1px solid #000;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.35);
   transform: translate(-50%, -50%);
 }
 
