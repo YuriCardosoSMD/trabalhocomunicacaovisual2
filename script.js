@@ -66,18 +66,24 @@ let mazeLastPosition = null;
 // Variáveis da Ampulheta
 let sandGrains = [];
 let sandTimer = null;
-let sandPileHeight = 0;
-const SAND_TICK_MS = 120;
+let sandSpawnCounter = 0;
+const SAND_TICK_MS = 64;
 const SAND_GRAIN_RADIUS = 3.5;
-const SAND_FALL_SPEED = 2.4;
-const SAND_PILE_RISE = 0.65;
-const SAND_GRAIN_COUNT = 72;
-const SAND_SIDE_MARGIN = 18;
-const SAND_SIDE_WIDTH = 122;
-const SAND_HOLE_Y = 205;
-const SAND_HOLE_LEFT_X = 151;
-const SAND_HOLE_RIGHT_X = 204;
-const SAND_EXIT_ZONES = [{ left: 145, right: 210 }];
+const SAND_FALL_SPEED = 0.42;
+const SAND_GRAVITY = 0.2;
+const SAND_INITIAL_COUNT = 24;
+const SAND_SPAWN_PER_TICK = 1;
+const SAND_SPAWN_INTERVAL = 5;
+const SAND_MAX_GRAINS = 1400;
+const SAND_EXIT_ZONES = [{ left: 150 / 355, right: 205 / 355 }];
+
+const SAND_LEFT_CHAMBER = [
+  [8 / 355, 4 / 261], [150 / 355, 4 / 261], [158 / 355, 24 / 261],
+  [158 / 355, 55 / 261], [146 / 355, 86 / 261], [146 / 355, 116 / 261],
+  [160 / 355, 145 / 261], [165 / 355, 182 / 261], [160 / 355, 220 / 261],
+  [150 / 355, 250 / 261], [8 / 355, 250 / 261]
+];
+const SAND_RIGHT_CHAMBER = SAND_LEFT_CHAMBER.map(([x, y]) => [1 - x, y]).reverse();
 
 // ==========================================
 // COLISÃO BASEADA NOS PIXELS REAIS DO QUADRINHO
@@ -202,25 +208,41 @@ function stopSand() {
     sandTimer = null;
   }
   sandGrains = [];
-  sandPileHeight = 0;
+  sandSpawnCounter = 0;
   sandLayer.replaceChildren();
 }
 
 function createSand() {
   stopSand();
-  for (let i = 0; i < SAND_GRAIN_COUNT; i++) {
-    const leftSide = i % 2 === 0;
-    const columnOffset = (i * 37) % 105;
-    const x = leftSide ? 28 + columnOffset : mazeWidth - 28 - columnOffset;
-    const y = -((i * 53) % 180);
-    const element = document.createElement("span");
-    element.className = "sand-grain";
-    sandLayer.append(element);
-    
-    sandGrains.push({ x, y, element, vx: 0, vy: SAND_FALL_SPEED });
-  }
+  for (let i = 0; i < SAND_INITIAL_COUNT; i++) spawnSandGrain();
   renderSand();
   sandTimer = setInterval(updateSand, SAND_TICK_MS);
+}
+
+function spawnSandGrain() {
+  if (sandGrains.length >= SAND_MAX_GRAINS) return;
+
+  const leftSide = sandGrains.length % 2 === 0;
+  const chamber = leftSide ? SAND_LEFT_CHAMBER : SAND_RIGHT_CHAMBER;
+  const bounds = chamber.reduce((result, [x, y]) => ({
+    minX: Math.min(result.minX, x), maxX: Math.max(result.maxX, x),
+    minY: Math.min(result.minY, y), maxY: Math.max(result.maxY, y)
+  }), { minX: 1, maxX: 0, minY: 1, maxY: 0 });
+  let x;
+  let y;
+  let attempts = 0;
+  do {
+    x = (bounds.minX + Math.random() * (bounds.maxX - bounds.minX)) * mazeWidth;
+    y = (0.1 + Math.random() * 0.1) * mazeHeight;
+    attempts++;
+  } while ((!sandPointInChamber(x, y, chamber) || sandGrainHitsWall(x, y)) && attempts < 80);
+
+  if (!sandPointInChamber(x, y, chamber) || sandGrainHitsWall(x, y)) return;
+
+  const element = document.createElement("span");
+  element.className = "sand-grain";
+  sandLayer.append(element);
+  sandGrains.push({ x, y, element, vx: 0, vy: SAND_FALL_SPEED });
 }
 
 function updateSand() {
@@ -228,73 +250,155 @@ function updateSand() {
     stopSand();
     return;
   }
-  
-  sandPileHeight = Math.min(mazeHeight * 0.32, sandPileHeight + SAND_PILE_RISE);
-  const floorY = mazeHeight - sandPileHeight - 7;
-  
+
+  sandSpawnCounter++;
+  if (sandSpawnCounter >= SAND_SPAWN_INTERVAL) {
+    for (let i = 0; i < SAND_SPAWN_PER_TICK; i++) spawnSandGrain();
+    sandSpawnCounter = 0;
+  }
+
   sandGrains.forEach((grain) => {
-    grain.vy = Math.min(5.5, grain.vy + 0.18);
-    grain.y += grain.vy;
-    
-    if (grain.y >= SAND_HOLE_Y) {
-      const holeX = grain.x < mazeWidth / 2 ? SAND_HOLE_LEFT_X : SAND_HOLE_RIGHT_X;
-      const direction = holeX > grain.x ? 1 : -1;
-      grain.vx += direction * 0.12;
-      grain.vx *= 0.94;
-      grain.x += grain.vx;
-    }
-    
-    const atBottomHole = grain.y > mazeHeight - 18 && (Math.abs(grain.x - SAND_HOLE_LEFT_X) < 13 || Math.abs(grain.x - SAND_HOLE_RIGHT_X) < 13);
-    
-    if (grain.y >= floorY && !atBottomHole) {
-      grain.y = floorY;
-      grain.vy *= -0.18;
-    }
-    
-    const leftLimit = grain.x < mazeWidth / 2 ? SAND_SIDE_MARGIN : mazeWidth - SAND_SIDE_MARGIN;
-    const rightLimit = grain.x < mazeWidth / 2 ? SAND_SIDE_MARGIN + SAND_SIDE_WIDTH : mazeWidth - SAND_SIDE_MARGIN - SAND_SIDE_WIDTH;
-    
-    if (grain.y < SAND_HOLE_Y) {
-      grain.x = grain.x < mazeWidth / 2 
-        ? Math.min(rightLimit, Math.max(leftLimit, grain.x)) 
-        : Math.max(rightLimit, Math.min(leftLimit, grain.x));
-    }
+    grain.vy = Math.min(6, grain.vy + SAND_GRAVITY);
+    moveSandGrain(grain);
   });
   
   resolveSandCollisions();
-  
-  sandGrains = sandGrains.filter((grain) => {
-    const escapedLeft = grain.x < SAND_HOLE_LEFT_X + 10 && grain.x > SAND_HOLE_LEFT_X - 10 && grain.y > mazeHeight - 4;
-    const escapedRight = grain.x < SAND_HOLE_RIGHT_X + 10 && grain.x > SAND_HOLE_RIGHT_X - 10 && grain.y > mazeHeight - 4;
-    
-    if (escapedLeft || escapedRight) {
-      grain.element.remove();
-      return false;
-    }
-    return true;
-  });
+  sandGrains.forEach(keepSandGrainInsideScreen);
   
   renderSand();
 }
 
+function keepSandGrainInsideScreen(grain) {
+  const minimumX = SAND_GRAIN_RADIUS;
+  const maximumX = mazeWidth - SAND_GRAIN_RADIUS;
+  const maximumY = mazeHeight - SAND_GRAIN_RADIUS;
+
+  grain.x = Math.max(minimumX, Math.min(maximumX, grain.x));
+  if (grain.y > maximumY) {
+    grain.y = maximumY;
+    grain.vy = 0;
+  }
+}
+
+function sandPointInChamber(x, y, chamber) {
+  let inside = false;
+  for (let i = 0, j = chamber.length - 1; i < chamber.length; j = i++) {
+    const [currentX, currentY] = chamber[i];
+    const [previousX, previousY] = chamber[j];
+    const intersects = ((currentY * mazeHeight > y) !== (previousY * mazeHeight > y))
+      && x < ((previousX - currentX) * mazeHeight * (y / mazeHeight - currentY) / (previousY - currentY) + currentX * mazeWidth);
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function sandPositionAllowed(x, y) {
+  if (y < 0) return true;
+  if (y >= mazeHeight) {
+    return true;
+  }
+  const isCentralDrain = y >= (242 / 261) * mazeHeight
+    && SAND_EXIT_ZONES.some((zone) => x >= zone.left * mazeWidth && x <= zone.right * mazeWidth);
+  if (isCentralDrain) return true;
+  return sandPointInChamber(x, y, SAND_LEFT_CHAMBER) || sandPointInChamber(x, y, SAND_RIGHT_CHAMBER);
+}
+
+function sandGrainHitsWall(x, y) {
+  const samples = 8;
+  for (let i = 0; i < samples; i++) {
+    const angle = (Math.PI * 2 * i) / samples;
+    if (!sandPositionAllowed(x + Math.cos(angle) * SAND_GRAIN_RADIUS, y + Math.sin(angle) * SAND_GRAIN_RADIUS)) return true;
+  }
+  return !sandPositionAllowed(x, y);
+}
+
+function moveSandGrain(grain) {
+  const nextY = grain.y + grain.vy;
+  const nextX = grain.x + grain.vx;
+
+  if (!sandGrainHitsWall(nextX, nextY)) {
+    grain.x = nextX;
+    grain.y = nextY;
+    return;
+  }
+
+  grain.vy = 0;
+  const towardCenter = grain.x < mazeWidth / 2 ? 1 : -1;
+  const slideDirections = [towardCenter, -towardCenter];
+
+  for (const direction of slideDirections) {
+    const slideX = grain.x + direction * 1.6;
+    const slideY = grain.y + 1.2;
+    if (!sandGrainHitsWall(slideX, slideY)) {
+      grain.x = slideX;
+      grain.y = slideY;
+      grain.vy = SAND_FALL_SPEED;
+      return;
+    }
+  }
+
+  for (const direction of slideDirections) {
+    const slideX = grain.x + direction * 1.6;
+    if (!sandGrainHitsWall(slideX, grain.y)) {
+      grain.x = slideX;
+      return;
+    }
+  }
+}
+
 function resolveSandCollisions() {
   const minimumDistance = SAND_GRAIN_RADIUS * 2 + 1;
-  for (let firstIndex = 0; firstIndex < sandGrains.length; firstIndex++) {
-    for (let secondIndex = firstIndex + 1; secondIndex < sandGrains.length; secondIndex++) {
-      const first = sandGrains[firstIndex];
-      const second = sandGrains[secondIndex];
-      const deltaX = second.x - first.x;
-      const deltaY = second.y - first.y;
-      const distance = Math.hypot(deltaX, deltaY);
-      
-      if (distance === 0 || distance >= minimumDistance) continue;
-      
-      const push = (minimumDistance - distance) / distance / 2;
-      first.x -= deltaX * push;
-      first.y -= deltaY * push;
-      second.x += deltaX * push;
-      second.y += deltaY * push;
-    }
+  const cellSize = minimumDistance;
+  const collisionPasses = 3;
+
+  for (let pass = 0; pass < collisionPasses; pass++) {
+    const buckets = new Map();
+    const grainIndexes = new Map(sandGrains.map((grain, index) => [grain, index]));
+
+    sandGrains.forEach((grain) => {
+      const cellX = Math.floor(grain.x / cellSize);
+      const cellY = Math.floor(grain.y / cellSize);
+      const key = `${cellX},${cellY}`;
+      const bucket = buckets.get(key) || [];
+      bucket.push(grain);
+      buckets.set(key, bucket);
+    });
+
+    sandGrains.forEach((first) => {
+      const firstCellX = Math.floor(first.x / cellSize);
+      const firstCellY = Math.floor(first.y / cellSize);
+      const firstIndex = grainIndexes.get(first);
+
+      for (let offsetY = -1; offsetY <= 1; offsetY++) {
+        for (let offsetX = -1; offsetX <= 1; offsetX++) {
+          const bucket = buckets.get(`${firstCellX + offsetX},${firstCellY + offsetY}`) || [];
+          bucket.forEach((second) => {
+            if (grainIndexes.get(second) <= firstIndex) return;
+
+            const deltaX = second.x - first.x;
+            const deltaY = second.y - first.y;
+            const distance = Math.hypot(deltaX, deltaY);
+            const safeDistance = Math.max(distance, 0.01);
+            if (distance >= minimumDistance) return;
+
+            const directionX = distance === 0 ? 1 : deltaX / safeDistance;
+            const directionY = distance === 0 ? 0 : deltaY / safeDistance;
+            const push = (minimumDistance - distance) / 2;
+            const firstX = first.x - directionX * push;
+            const firstY = first.y - directionY * push;
+            const secondX = second.x + directionX * push;
+            const secondY = second.y + directionY * push;
+
+            if (!sandGrainHitsWall(firstX, firstY) && !sandGrainHitsWall(secondX, secondY)) {
+              first.x = firstX;
+              first.y = firstY;
+              second.x = secondX;
+              second.y = secondY;
+            }
+          });
+        }
+      }
+    });
   }
 }
 
@@ -403,15 +507,14 @@ function segmentHitsWall(fromX, fromY, toX, toY, radius) {
 // ==========================================
 function reachedMazeEnd(x, y) {
   if (current === SAND_PANEL) {
-    const reachedExit = SAND_EXIT_ZONES.some((zone) => x >= zone.left && x <= zone.right);
+    const reachedExit = SAND_EXIT_ZONES.some((zone) => x >= zone.left * mazeWidth && x <= zone.right * mazeWidth);
     return reachedExit && y >= mazeHeight - PLAYER_RADIUS;
   }
   return y >= mazeHeight - PLAYER_RADIUS;
 }
 
 function sandBlocksExit(x, y) {
-  const isNearExit = current === SAND_PANEL && SAND_EXIT_ZONES.some((zone) => x >= zone.left && x <= zone.right) && y >= mazeHeight - 42;
-  return sandPileHeight > 18 && y >= mazeHeight - sandPileHeight - PLAYER_RADIUS && !isNearExit;
+  return sandGrains.some((grain) => Math.hypot(grain.x - x, grain.y - y) <= PLAYER_RADIUS + SAND_GRAIN_RADIUS);
 }
 
 function triggerGameOver() {
