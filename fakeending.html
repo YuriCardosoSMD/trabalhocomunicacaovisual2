@@ -5,14 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fake Ending</title>
   <style>
-    /* Reset básico */
+    @font-face {
+      font-family: "Seventeen";
+      src: url("assets/fonts/I am Seventeen.ttf") format("truetype");
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
-    /* Fundo igual ao da HQ principal */
     body {
       background-color: #1a1008;
       display: flex;
@@ -20,20 +26,18 @@
       align-items: center;
       min-height: 100vh;
       overflow: hidden;
-      font-family: Georgia, serif;
+      font-family: "Seventeen", sans-serif;
     }
 
-    /* Container com as mesmas dimensões da #hq-stage */
     #fake-stage {
       position: relative;
       width: 80vw;
       max-width: 1200px;
       aspect-ratio: 720 / 500;
       overflow: hidden;
-      cursor: pointer; /* Indica que é clicável */
+      cursor: pointer;
     }
 
-    /* A imagem preenche o container mantendo a proporção */
     #fake-stage img {
       position: absolute;
       top: 0;
@@ -41,10 +45,9 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      pointer-events: none; /* Impede a imagem de capturar o clique */
+      pointer-events: none;
     }
 
-    /* Responsividade - mesmo comportamento das outras páginas */
     @media (max-width: 1024px) {
       #fake-stage {
         width: 95vw;
@@ -59,7 +62,6 @@
   </style>
 </head>
 <body onclick="window.location.href='index.html'">
-  <!-- Container que iguala o tamanho da HQ -->
   <div id="fake-stage">
     <img src="assets/fakeending.gif" alt="Fake Ending">
   </div>
