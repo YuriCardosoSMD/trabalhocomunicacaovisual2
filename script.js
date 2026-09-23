@@ -13,7 +13,7 @@ const panels = [
   "assets/quad9.gif",
   "assets/quad10.gif",
   "assets/quad11.gif",
-  "assets/algas7.gif"
+  "assets/trueending.gif"
 ];
 
 const panelTexts = {
@@ -475,8 +475,9 @@ function triggerGameOver() {
   if (mazeCompleted) return;
   mazeDragging = false;
   mazePlayer.classList.remove("dragging");
+  
   setTimeout(() => {
-    window.location.href = "gameover.html";
+    window.location.href = "fakeending.html";
   }, 100);
 }
 
@@ -491,6 +492,7 @@ function completeMaze() {
       current = panels.length - 1;
       img.src = panels[current];
       updateUI();
+      updateSoundtrack();
       requestAnimationFrame(() => img.classList.remove("fade-out"));
       return;
     }
@@ -594,6 +596,7 @@ function navigate(direction) {
     current = next;
     img.src = panels[current];
     updateUI();
+    updateSoundtrack();
     requestAnimationFrame(() => img.classList.remove("fade-out"));
   }, 350);
 }
@@ -746,5 +749,60 @@ function repositionDarkMazeElements() {
   updateDarkOverlay();
 }
 
+// ==========================================
+// TRILHA SONORA
+// ==========================================
+// Quadrinhos 8 e 9 ficam em silêncio.
+// current usa índice começando em 0: quad 8 = 7, quad 9 = 8.
+const SILENT_PANELS = new Set([7, 8]);
+const hqAudio = document.getElementById("hq-audio");
+const audioToggle = document.getElementById("audio-toggle");
+let audioEnabled = false;
+
+function isSilentPanel(panelIndex) {
+  return SILENT_PANELS.has(panelIndex);
+}
+
+function updateAudioUI() {
+  if (!audioToggle) return;
+  const silent = isSilentPanel(current);
+  const playing = hqAudio && !hqAudio.paused && !hqAudio.ended;
+  audioToggle.textContent = audioEnabled && playing && !silent ? "🔊" : "🔇";
+  audioToggle.setAttribute("aria-pressed", String(audioEnabled));
+  audioToggle.setAttribute("aria-label", audioEnabled ? "Desativar trilha sonora" : "Ativar trilha sonora");
+}
+
+async function updateSoundtrack() {
+  if (!hqAudio) return;
+  if (isSilentPanel(current)) {
+    hqAudio.pause();
+    hqAudio.currentTime = 0;
+    updateAudioUI();
+    return;
+  }
+  if (!audioEnabled) {
+    updateAudioUI();
+    return;
+  }
+  try { await hqAudio.play(); } catch (error) { console.warn("O navegador bloqueou a reprodução da trilha.", error); }
+  updateAudioUI();
+}
+
+if (audioToggle && hqAudio) {
+  audioToggle.addEventListener("click", async () => {
+    audioEnabled = !audioEnabled;
+    if (!audioEnabled) {
+      hqAudio.pause();
+      hqAudio.currentTime = 0;
+    } else if (!isSilentPanel(current)) {
+      try { await hqAudio.play(); } catch (error) { console.warn("Não foi possível iniciar a trilha.", error); }
+    }
+    updateAudioUI();
+  });
+  hqAudio.addEventListener("play", updateAudioUI);
+  hqAudio.addEventListener("pause", updateAudioUI);
+}
+
 img.src = panels[0];
 updateUI();
+updateSoundtrack();
