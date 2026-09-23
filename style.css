@@ -95,9 +95,7 @@ body {
    CONFIGURAÇÃO POR QUADRINHO (TAMANHOS E POSIÇÕES)
 ========================================================================== */
 
-/* --------------------------------------------------------------------------
-   QUADRINHO 1: "Eu te vi lá" (Tamanho Aumentado)
--------------------------------------------------------------------------- */
+/* QUADRINHO 1: "Eu te vi lá" (Tamanho Aumentado) */
 #hq-stage.show-first-text .text-eu,
 #hq-stage.show-first-text .text-te,
 #hq-stage.show-first-text .text-vi,
@@ -105,59 +103,50 @@ body {
   opacity: 1;
 }
 
-/* Tamanho de fonte do Quad 1 */
-.text-eu,
-.text-te,
-.text-vi,
-.text-la {
-  font-size: 100px; /* Aumentado */
+.text-eu, .text-te, .text-vi, .text-la {
+  font-size: 100px;
 }
 
-/* Posições individuais das palavras no Quad 1 */
 .text-eu { left: 10%; top: 17%; }
 .text-te { left: 15%; top: 39%; }
 .text-vi { right: 15%; top: 48%; }
 .text-la { right: 10%; top: 68%; }
 
-/* --------------------------------------------------------------------------
-   QUADRINHOS 2 A 5: (Tamanho padrão mantido ~32px)
--------------------------------------------------------------------------- */
+/* QUADRINHOS 2 A 5: (Tamanho padrão ~70px) */
 #panel-text.text-panel-2 {
   right: 20%;
   top: 46%;
   max-width: 55%;
-  font-size: 70px; 
+  font-size: 70px;
 }
 
 #panel-text.text-panel-3 {
   right: 10%;
   bottom: 13%;
   max-width: 55%;
-  font-size: 70px; 
+  font-size: 70px;
 }
 
 #panel-text.text-panel-4 {
   left: 8%;
   top: 30%;
   max-width: 58%;
-  font-size: 70px; 
+  font-size: 70px;
 }
 
 #panel-text.text-panel-5 {
   right: 7%;
   top: 15%;
   max-width: 65%;
-  font-size: 50px; 
+  font-size: 50px;
 }
 
-/* --------------------------------------------------------------------------
-   QUADRINHOS 6 A 10: (Tamanho diminuído ~24px)
--------------------------------------------------------------------------- */
+/* QUADRINHOS 6 A 10: (Tamanho diminuído ~50px) */
 #panel-text.text-panel-6 {
   left: 7%;
   top: 8%;
   max-width: 68%;
-  font-size: 50px; 
+  font-size: 50px;
 }
 
 #panel-text.text-panel-7 {
@@ -171,14 +160,14 @@ body {
   left: 7%;
   top: 8%;
   max-width: 68%;
-  font-size: 50px; 
+  font-size: 50px;
 }
 
 #panel-text.text-panel-9 {
   left: 25%;
   top: 48%;
   max-width: 68%;
-  font-size: 50px
+  font-size: 50px;
 }
 
 #panel-text.text-panel-10 {
@@ -188,37 +177,40 @@ body {
   font-size: 50px;
 }
 
-/* --------------------------------------------------------------------------
-   QUADRINHO 11: Cena final
--------------------------------------------------------------------------- */
+/* QUADRINHO 11: Cena final */
 #panel-text.text-panel-11 {
   left: 7%;
   bottom: 10%;
   max-width: 65%;
-  font-size: clamp(14px, 2.1vw, 24px); /* Diminuído um pouco */
+  font-size: clamp(14px, 2.1vw, 24px);
 }
 
 /* =========================================
-   ELEMENTOS INTERATIVOS (LABIRINTO/AREIA)
+   ELEMENTOS INTERATIVOS (PERSONAGEM/AREIA/SANGUE)
 ========================================= */
 #maze-player {
   position: absolute;
-  z-index: 20;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background-color: #d84a3a;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 2px #111, 0 0 8px rgba(255, 255, 255, 0.9);
+  z-index: 25;
+  width: 26px;
+  height: 26px;
+  background-image: url("assets/rostopersonagem.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: transparent;
+  border-radius: 4px;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.75));
   transform: translate(-50%, -50%);
   cursor: grab;
   touch-action: none;
   display: none;
+  transition: transform 0.1s ease;
 }
 
 #maze-player.dragging {
   cursor: grabbing;
-  transform: translate(-50%, -50%) scale(1.08);
+  transform: translate(-50%, -50%) scale(1.18);
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
 }
 
 #sand-layer {
@@ -235,6 +227,7 @@ body {
   display: block;
 }
 
+/* Grão de areia padrão (Quad 7) */
 .sand-grain {
   position: absolute;
   width: 7px;
@@ -244,6 +237,17 @@ body {
   border: 1px solid #000;
   box-shadow: 0 0 2px rgba(255, 255, 255, 0.35);
   transform: translate(-50%, -50%);
+}
+
+/* Gotas de Sangue / Líquido Acumulado (Quad 8) */
+.sand-grain.blood-grain {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff2a3f 0%, #aa0012 55%, #420006 100%) !important;
+  border: 1px solid #5a0008 !important;
+  box-shadow: 0 0 3px rgba(230, 10, 30, 0.5), inset 0 1px 1px rgba(255, 150, 150, 0.4) !important;
+  filter: drop-shadow(0 1px 2px rgba(60, 0, 0, 0.6));
 }
 
 /* =========================================
@@ -351,7 +355,7 @@ body {
   .arrow { width: 34px; height: 34px; }
   .arrow svg { width: 15px; height: 15px; }
   #panel-text { max-width: 70%; }
-  #maze-player { width: 16px; height: 16px; }
+  #maze-player { width: 24px; height: 24px; }
 }
 
 @media (max-width: 600px) {
@@ -360,14 +364,14 @@ body {
   .arrow svg { width: 14px; height: 14px; }
   #panel-text { max-width: 75%; }
   #page-counter { bottom: -24px; font-size: 11px; }
-  #maze-player { width: 13px; height: 13px; }
+  #maze-player { width: 20px; height: 20px; }
 }
 
 @media (max-width: 380px) {
   #hq-stage { width: 92vw; }
   .arrow { width: 26px; height: 26px; border-width: 2px; }
   .arrow svg { width: 12px; height: 12px; }
-  #maze-player { width: 12px; height: 12px; }
+  #maze-player { width: 18px; height: 18px; }
 }
 
 /* =========================================
