@@ -21,12 +21,12 @@ const panelTexts = {
   1: "Você usa \nquase as \nmesmas \nroupas",
   2: "Seu\nolhar\nanda\ncansado",
   3: "Desde então\nmuito tempo \nse passou",
-  4: "Tempo o suficiente para lembrar o \nporquê não nos falamos",
-  5: "Tempo o suficiente para lembrar\ndas tardes que o silêncio não existia",
-  6: "Não deixo de pensar na tragédia\ndo passado",
-  7: "O silêncio seria brutalmente\nassassinado",
+  4: "Tempo o suficiente \npara lembrar o porquê \nnão nos falamos",
+  5: "Tempo \no \nsuficiente \npara \nlembrar\ndas \ntardes \nque \no \nsilêncio \nnão \nexistia",
+  6: "Não \ndeixo \nde \npensar \nna \ntragédia\ndo \npassado",
+  7: "O \nsilêncio \nseria \nbrutalmente\nassassinado",
   8: "Mostraríamos os dentes e\nberraríamos como hienas",
-  9: "Que bom que agora nos resta\no silêncio e",
+  9: "Que bom que agora nos resta\no silêncio e...",
   10: "Nossos dentes estão escondidos\npelo cansaço"
 };
 

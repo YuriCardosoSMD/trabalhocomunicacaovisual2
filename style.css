@@ -22,7 +22,8 @@ body {
 ========================================= */
 @font-face {
   font-family: "Seventeen";
-  src: url("assets/fonts/I am Seventeen.ttf") format("truetype");
+  src: url("assets/fonts/I am Seventeen.ttf") format("truetype"),
+       url("assets/fonts/I_am_Seventeen.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -30,7 +31,8 @@ body {
 
 @font-face {
   font-family: "I am Seventeen";
-  src: url("assets/fonts/I am Seventeen.ttf") format("truetype");
+  src: url("assets/fonts/I am Seventeen.ttf") format("truetype"),
+       url("assets/fonts/I_am_Seventeen.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -65,7 +67,7 @@ body {
 }
 
 /* =========================================
-   TEXTOS DA HQ E POSICIONAMENTO
+   ESTRUTURA BASE DOS TEXTOS
 ========================================= */
 .comic-text {
   position: absolute;
@@ -75,22 +77,9 @@ body {
   font-weight: normal;
   line-height: 1.15;
   pointer-events: none;
-  font-size: clamp(16px, 2.8vw, 32px);
   opacity: 0;
   transition: opacity 0.2s ease;
 }
-
-#hq-stage.show-first-text .text-eu,
-#hq-stage.show-first-text .text-te,
-#hq-stage.show-first-text .text-vi,
-#hq-stage.show-first-text .text-la {
-  opacity: 1;
-}
-
-.text-eu { left: 10%; top: 17%; }
-.text-te { left: 15%; top: 39%; }
-.text-vi { right: 15%; top: 48%; }
-.text-la { right: 10%; top: 68%; }
 
 #panel-text {
   max-width: 65%;
@@ -102,16 +91,112 @@ body {
   opacity: 1;
 }
 
-#panel-text.text-panel-2 { right: 20%; top: 40%; max-width: 55%; }
-#panel-text.text-panel-3 { right: 10%; bottom: 13%; max-width: 55%; }
-#panel-text.text-panel-4 { left: 8%; top: 30%; max-width: 58%; }
-#panel-text.text-panel-5 { right: 10%; top: 10%; max-width: 65%; }
-#panel-text.text-panel-6 { right: 7%; top: 10%; max-width: 68%; }
-#panel-text.text-panel-7 { left: 7%; top: 10%; max-width: 60%; }
-#panel-text.text-panel-8 { right: 7%; bottom: 12%; max-width: 60%; }
-#panel-text.text-panel-9 { left: 8%; bottom: 9%; max-width: 68%; }
-#panel-text.text-panel-10 { right: 7%; top: 9%; max-width: 65%; }
-#panel-text.text-panel-11 { left: 7%; bottom: 10%; max-width: 65%; }
+/* ==========================================================================
+   CONFIGURAÇÃO POR QUADRINHO (TAMANHOS E POSIÇÕES)
+========================================================================== */
+
+/* --------------------------------------------------------------------------
+   QUADRINHO 1: "Eu te vi lá" (Tamanho Aumentado)
+-------------------------------------------------------------------------- */
+#hq-stage.show-first-text .text-eu,
+#hq-stage.show-first-text .text-te,
+#hq-stage.show-first-text .text-vi,
+#hq-stage.show-first-text .text-la {
+  opacity: 1;
+}
+
+/* Tamanho de fonte do Quad 1 */
+.text-eu,
+.text-te,
+.text-vi,
+.text-la {
+  font-size: 100px; /* Aumentado */
+}
+
+/* Posições individuais das palavras no Quad 1 */
+.text-eu { left: 10%; top: 17%; }
+.text-te { left: 15%; top: 39%; }
+.text-vi { right: 15%; top: 48%; }
+.text-la { right: 10%; top: 68%; }
+
+/* --------------------------------------------------------------------------
+   QUADRINHOS 2 A 5: (Tamanho padrão mantido ~32px)
+-------------------------------------------------------------------------- */
+#panel-text.text-panel-2 {
+  right: 20%;
+  top: 46%;
+  max-width: 55%;
+  font-size: 70px; 
+}
+
+#panel-text.text-panel-3 {
+  right: 10%;
+  bottom: 13%;
+  max-width: 55%;
+  font-size: 70px; 
+}
+
+#panel-text.text-panel-4 {
+  left: 8%;
+  top: 30%;
+  max-width: 58%;
+  font-size: 70px; 
+}
+
+#panel-text.text-panel-5 {
+  right: 7%;
+  top: 15%;
+  max-width: 65%;
+  font-size: 50px; 
+}
+
+/* --------------------------------------------------------------------------
+   QUADRINHOS 6 A 10: (Tamanho diminuído ~24px)
+-------------------------------------------------------------------------- */
+#panel-text.text-panel-6 {
+  left: 7%;
+  top: 8%;
+  max-width: 68%;
+  font-size: 50px; 
+}
+
+#panel-text.text-panel-7 {
+  right: 7%;
+  top: 10%;
+  max-width: 60%;
+  font-size: 50px;
+}
+
+#panel-text.text-panel-8 {
+  left: 7%;
+  top: 8%;
+  max-width: 68%;
+  font-size: 50px; 
+}
+
+#panel-text.text-panel-9 {
+  left: 25%;
+  top: 48%;
+  max-width: 68%;
+  font-size: 50px
+}
+
+#panel-text.text-panel-10 {
+  left: 10%;
+  top: 50%;
+  max-width: 65%;
+  font-size: 50px;
+}
+
+/* --------------------------------------------------------------------------
+   QUADRINHO 11: Cena final
+-------------------------------------------------------------------------- */
+#panel-text.text-panel-11 {
+  left: 7%;
+  bottom: 10%;
+  max-width: 65%;
+  font-size: clamp(14px, 2.1vw, 24px); /* Diminuído um pouco */
+}
 
 /* =========================================
    ELEMENTOS INTERATIVOS (LABIRINTO/AREIA)
@@ -265,7 +350,6 @@ body {
   .nav-zone { width: 22%; padding: 0 10px; }
   .arrow { width: 34px; height: 34px; }
   .arrow svg { width: 15px; height: 15px; }
-  .comic-text { font-size: clamp(16px, 3.5vw, 28px); }
   #panel-text { max-width: 70%; }
   #maze-player { width: 16px; height: 16px; }
 }
@@ -274,7 +358,6 @@ body {
   .nav-zone { width: 22%; padding: 0 8px; }
   .arrow { width: 30px; height: 30px; }
   .arrow svg { width: 14px; height: 14px; }
-  .comic-text { font-size: clamp(15px, 5vw, 25px); }
   #panel-text { max-width: 75%; }
   #page-counter { bottom: -24px; font-size: 11px; }
   #maze-player { width: 13px; height: 13px; }
@@ -284,7 +367,6 @@ body {
   #hq-stage { width: 92vw; }
   .arrow { width: 26px; height: 26px; border-width: 2px; }
   .arrow svg { width: 12px; height: 12px; }
-  .comic-text { font-size: 16px; }
   #maze-player { width: 12px; height: 12px; }
 }
 
