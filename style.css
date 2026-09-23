@@ -72,7 +72,6 @@ body {
   transition: opacity 0.2s ease;
 }
 
-/* Textos da primeira cena */
 #hq-stage.show-first-text .text-eu,
 #hq-stage.show-first-text .text-te,
 #hq-stage.show-first-text .text-vi,
@@ -83,7 +82,6 @@ body {
 .text-vi { right: 15%; top: 48%; }
 .text-la { right: 10%; top: 68%; }
 
-/* Layout base dos textos dinâmicos (Cena 2 em diante) */
 #panel-text {
   max-width: 65%;
   text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);
@@ -91,7 +89,6 @@ body {
 }
 #panel-text.visible { opacity: 1; }
 
-/* Posições dinâmicas para cada quadrinho */
 #panel-text.text-panel-2 { right: 20%; top: 40%; max-width: 55%; }
 #panel-text.text-panel-3 { right: 10%; bottom: 13%; max-width: 55%; }
 #panel-text.text-panel-4 { left: 8%; top: 30%; max-width: 58%; }
@@ -135,7 +132,6 @@ body {
   display: none;
 }
 
-/* Mostra elementos dinâmicos apenas na classe maze-active */
 #hq-stage.maze-active #sand-layer,
 #hq-stage.maze-active #maze-player { display: block; }
 
@@ -171,12 +167,6 @@ body {
 .nav-zone.right { right: 0; justify-content: flex-end; }
 .nav-zone.hidden { pointer-events: none; opacity: 0; }
 
-/* Oculta navegação durante o desafio do labirinto */
-#hq-stage.maze-active .nav-zone {
-  pointer-events: none;
-  opacity: 0;
-}
-
 .arrow {
   width: 36px;
   height: 36px;
@@ -211,15 +201,40 @@ body {
 }
 
 /* =========================================
-   RESPONSIVIDADE (MEDIA QUERIES)
+   LABIRINTO ESCURO (QUAD 10)
 ========================================= */
 
-/* Tablets em geral (iPad, Samsung Galaxy Tab, etc) */
+#dark-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12; 
+  pointer-events: none;
+  background: transparent; /* O canvas cuida do fundo */
+}
+
+/* Área de clique invisível sobre as lâmpadas desenhadas */
+.lamp-hitbox {
+  position: absolute;
+  z-index: 18; /* Acima do overlay (z:12) */
+  width: 60px; /* Área de clique confortável */
+  height: 60px;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  pointer-events: all;
+  border-radius: 50%;
+  background: transparent;
+}
+
+/* No labirinto escuro, a bolinha fica acima do overlay */
+#hq-stage.dark-maze-active #maze-player {
+  z-index: 22;
+}
+
+/* =========================================
+   RESPONSIVIDADE (MEDIA QUERIES)
+========================================= */
 @media (max-width: 1024px) {
-  #hq-stage {
-    width: 95vw;
-    max-width: none;
-  }
+  #hq-stage { width: 95vw; max-width: none; }
   .nav-zone { width: 22%; padding: 0 10px; }
   .arrow { width: 34px; height: 34px; }
   .arrow svg { width: 15px; height: 15px; }
@@ -228,7 +243,6 @@ body {
   #maze-player { width: 16px; height: 16px; }
 }
 
-/* Celulares */
 @media (max-width: 600px) {
   .nav-zone { width: 22%; padding: 0 8px; }
   .arrow { width: 30px; height: 30px; }
@@ -239,7 +253,6 @@ body {
   #maze-player { width: 13px; height: 13px; }
 }
 
-/* Celulares muito pequenos */
 @media (max-width: 380px) {
   #hq-stage { width: 92vw; }
   .arrow { width: 26px; height: 26px; border-width: 2px; }

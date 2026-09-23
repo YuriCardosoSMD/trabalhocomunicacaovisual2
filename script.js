@@ -33,7 +33,7 @@ const panelTexts = {
 // ==========================================
 // VARIÁVEIS DE CONTROLE E ELEMENTOS DOM
 // ==========================================
-let current = 0; // Índice da cena atual (0 = quad1)
+let current = 0; 
 
 const stage = document.getElementById("hq-stage");
 const img = document.getElementById("panel-img");
@@ -47,18 +47,26 @@ const sandLayer = document.getElementById("sand-layer");
 // ==========================================
 // CONFIGURAÇÕES DO LABIRINTO E AMPULHETA
 // ==========================================
-const MAZE_PANEL = 5; // Equivalente ao quadrinho 6
-const SAND_PANEL = 6; // Equivalente ao quadrinho 7
+const MAZE_PANEL = 5; 
+const SAND_PANEL = 6; 
+const DARK_MAZE_PANEL = 9; 
 const MAZE_START = { x: 385, y: 45 };
 const SAND_START = { x: 177.5, y: 18 };
-const PLAYER_RADIUS = 3; // Hitbox reduzida, bastante tolerante a esbarrões
+const DARK_MAZE_START = { x: 190, y: 40 }; 
 
-// Propriedades do labirinto em escala
+const DARK_MAZE_LAMPS = [
+  { x: 601, y: 97,  radius: 260 }, 
+  { x: 150, y: 220, radius: 260 }, 
+  { x: 330, y: 400, radius: 260 }, 
+];
+
+let lampStates = DARK_MAZE_LAMPS.map(() => ({ lit: false }));
+const PLAYER_RADIUS = 3; 
+
 let mazeWidth = 0;
 let mazeHeight = 0;
 let mazeReady = false;
 
-// Estado da Bolinha
 let mazeDragging = false;
 let mazeCompleted = false;
 let mazeLastPosition = null;
@@ -89,13 +97,8 @@ const SAND_RIGHT_CHAMBER = SAND_LEFT_CHAMBER.map(([x, y]) => [1 - x, y]).reverse
 // ==========================================
 // COLISÃO BASEADA NOS PIXELS REAIS DO QUADRINHO
 // ==========================================
-// Em vez de retângulos "chutados" (que não acompanhavam o desenho real
-// do labirinto/ampulheta), lemos a própria imagem: traços escuros viram
-// parede, fundo claro vira caminho livre. Isso garante que a colisão
-// sempre corresponda exatamente ao que está desenhado na tela, mesmo que
-// as imagens sejam substituídas ou redesenhadas no futuro.
-const WALL_CELL = 8; // tamanho (em px da imagem original) de cada célula da grade
-const WALL_DENSITY_THRESHOLD = 0.35; // fração de pixels escuros para considerar "parede"
+const WALL_CELL = 8; 
+const WALL_DENSITY_THRESHOLD = 0.35; 
 const maskCanvas = document.createElement("canvas");
 const maskCtx = maskCanvas.getContext("2d", { willReadFrequently: true });
 
@@ -105,7 +108,6 @@ let wallGridRows = 0;
 
 function buildWallGrid() {
   wallGrid = null;
-
   if (!mazeWidth || !mazeHeight) return;
 
   maskCanvas.width = mazeWidth;
@@ -117,10 +119,7 @@ function buildWallGrid() {
     maskCtx.drawImage(img, 0, 0, mazeWidth, mazeHeight);
     data = maskCtx.getImageData(0, 0, mazeWidth, mazeHeight).data;
   } catch (error) {
-    // Se as imagens forem abertas via file:// (sem servidor local), o
-    // canvas pode ficar "tainted" e getImageData falha por segurança.
-    // Nesse caso, avisamos no console em vez de travar o jogo.
-    console.warn("Não foi possível ler os pixels do quadrinho para calcular colisão (rode o projeto por um servidor local, não abrindo o HTML direto do disco).", error);
+    console.warn("Não foi possível ler os pixels do quadrinho para calcular colisão.", error);
     return;
   }
 
@@ -147,42 +146,33 @@ function buildWallGrid() {
   for (let i = 0; i < cellCount; i++) {
     grid[i] = (darkCount[i] / Math.max(totalCount[i], 1)) > WALL_DENSITY_THRESHOLD ? 1 : 0;
   }
-
   wallGrid = grid;
 }
 
-// ==========================================
-// FUNÇÕES UTILITÁRIAS DE CENA
-// ==========================================
 function isChallengePanel() {
-  return (current === MAZE_PANEL || current === SAND_PANEL);
+  return (current === MAZE_PANEL || current === SAND_PANEL || current === DARK_MAZE_PANEL);
 }
 
 function getChallengeStart() {
-  return current === SAND_PANEL ? SAND_START : MAZE_START;
+  if (current === SAND_PANEL) return SAND_START;
+  if (current === DARK_MAZE_PANEL) return DARK_MAZE_START;
+  return MAZE_START;
 }
 
-// ==========================================
-// PREPARAÇÃO DO LABIRINTO
-// ==========================================
 function prepareMaze() {
   if (!isChallengePanel()) return;
-  
   if (!img.complete || !img.naturalWidth || !img.naturalHeight) {
     setTimeout(prepareMaze, 50);
     return;
   }
-  
   mazeWidth = img.naturalWidth;
   mazeHeight = img.naturalHeight;
-  
   if (mazeWidth === 0 || mazeHeight === 0) {
     setTimeout(prepareMaze, 50);
     return;
   }
 
   buildWallGrid();
-
   mazeReady = true;
   mazeCompleted = false;
   
@@ -190,6 +180,12 @@ function prepareMaze() {
     createSand();
   } else {
     stopSand();
+  }
+
+  if (current === DARK_MAZE_PANEL) {
+    initDarkMaze();
+  } else {
+    teardownDarkMaze();
   }
   
   const challengeStart = getChallengeStart();
@@ -222,16 +218,13 @@ function createSand() {
 
 function spawnSandGrain() {
   if (sandGrains.length >= SAND_MAX_GRAINS) return;
-
   const leftSide = sandGrains.length % 2 === 0;
   const chamber = leftSide ? SAND_LEFT_CHAMBER : SAND_RIGHT_CHAMBER;
   const bounds = chamber.reduce((result, [x, y]) => ({
     minX: Math.min(result.minX, x), maxX: Math.max(result.maxX, x),
     minY: Math.min(result.minY, y), maxY: Math.max(result.maxY, y)
   }), { minX: 1, maxX: 0, minY: 1, maxY: 0 });
-  let x;
-  let y;
-  let attempts = 0;
+  let x, y, attempts = 0;
   do {
     x = (bounds.minX + Math.random() * (bounds.maxX - bounds.minX)) * mazeWidth;
     y = (0.1 + Math.random() * 0.1) * mazeHeight;
@@ -251,7 +244,6 @@ function updateSand() {
     stopSand();
     return;
   }
-
   sandSpawnCounter++;
   if (sandSpawnCounter >= SAND_SPAWN_INTERVAL) {
     for (let i = 0; i < SAND_SPAWN_PER_TICK; i++) spawnSandGrain();
@@ -265,7 +257,6 @@ function updateSand() {
   
   resolveSandCollisions();
   sandGrains.forEach(keepSandGrainInsideScreen);
-  
   renderSand();
 }
 
@@ -273,7 +264,6 @@ function keepSandGrainInsideScreen(grain) {
   const minimumX = SAND_GRAIN_RADIUS;
   const maximumX = mazeWidth - SAND_GRAIN_RADIUS;
   const maximumY = mazeHeight - SAND_GRAIN_RADIUS;
-
   grain.x = Math.max(minimumX, Math.min(maximumX, grain.x));
   if (grain.y > maximumY) {
     grain.y = maximumY;
@@ -295,9 +285,7 @@ function sandPointInChamber(x, y, chamber) {
 
 function sandPositionAllowed(x, y) {
   if (y < 0) return true;
-  if (y >= mazeHeight) {
-    return true;
-  }
+  if (y >= mazeHeight) return true;
   const isCentralDrain = y >= (242 / 261) * mazeHeight
     && SAND_EXIT_ZONES.some((zone) => x >= zone.left * mazeWidth && x <= zone.right * mazeWidth);
   if (isCentralDrain) return true;
@@ -316,13 +304,11 @@ function sandGrainHitsWall(x, y, radius = SAND_GRAIN_RADIUS) {
 function moveSandGrain(grain) {
   const nextY = grain.y + grain.vy;
   const nextX = grain.x + grain.vx;
-
   if (!sandGrainHitsWall(nextX, nextY)) {
     grain.x = nextX;
     grain.y = nextY;
     return;
   }
-
   grain.vy = 0;
   if (nextY > mazeHeight - SAND_GRAIN_RADIUS) {
     grain.y = mazeHeight - SAND_GRAIN_RADIUS;
@@ -357,7 +343,6 @@ function resolveSandCollisions() {
           const bucket = buckets.get(`${firstCellX + offsetX},${firstCellY + offsetY}`) || [];
           bucket.forEach((second) => {
             if (grainIndexes.get(second) <= firstIndex) return;
-
             const deltaX = second.x - first.x;
             const deltaY = second.y - first.y;
             const distance = Math.hypot(deltaX, deltaY);
@@ -373,10 +358,8 @@ function resolveSandCollisions() {
             const secondY = second.y + directionY * push;
 
             if (!sandGrainHitsWall(firstX, firstY) && !sandGrainHitsWall(secondX, secondY)) {
-              first.x = firstX;
-              first.y = firstY;
-              second.x = secondX;
-              second.y = secondY;
+              first.x = firstX; first.y = firstY;
+              second.x = secondX; second.y = secondY;
               return;
             }
 
@@ -386,8 +369,7 @@ function resolveSandCollisions() {
             const separatedSecondX = second.x + horizontalDirection * horizontalPush;
 
             if (!sandGrainHitsWall(separatedFirstX, first.y) && !sandGrainHitsWall(separatedSecondX, second.y)) {
-              first.x = separatedFirstX;
-              second.x = separatedSecondX;
+              first.x = separatedFirstX; second.x = separatedSecondX;
             }
           });
         }
@@ -400,9 +382,6 @@ function renderSand() {
   sandGrains.forEach((grain) => positionElementAtImageCoordinates(grain.element, grain.x, grain.y));
 }
 
-// ==========================================
-// CONVERSÃO E POSICIONAMENTO DA TELA
-// ==========================================
 function getImageCoordinates(clientX, clientY) {
   const layout = getImageLayout();
   if (!layout) return null;
@@ -416,11 +395,9 @@ function getImageLayout() {
   const naturalWidth = img.naturalWidth;
   const naturalHeight = img.naturalHeight;
   if (!naturalWidth || !naturalHeight || !rect.width || !rect.height) return null;
-  
   const scale = Math.min(rect.width / naturalWidth, rect.height / naturalHeight);
   return {
-    rect,
-    scale,
+    rect, scale,
     offsetX: (rect.width - naturalWidth * scale) / 2,
     offsetY: (rect.height - naturalHeight * scale) / 2
   };
@@ -429,11 +406,9 @@ function getImageLayout() {
 function positionElementAtImageCoordinates(element, imageX, imageY) {
   const layout = getImageLayout();
   if (!layout) return;
-  
   const stageRect = stage.getBoundingClientRect();
   const x = layout.rect.left - stageRect.left + layout.offsetX + imageX * layout.scale;
   const y = layout.rect.top - stageRect.top + layout.offsetY + imageY * layout.scale;
-  
   element.style.left = `${x}px`;
   element.style.top = `${y}px`;
 }
@@ -447,22 +422,12 @@ function positionPlayer(imageX, imageY) {
   positionElementAtImageCoordinates(mazePlayer, imageX, imageY);
 }
 
-// ==========================================
-// LÓGICA DE COLISÃO DO JOGADOR
-// ==========================================
-
 function isWall(x, y) {
-  // Saiu dos limites da imagem inteira
   if (x < 0 || x >= mazeWidth || y < 0 || y >= mazeHeight) return true;
-
-  // Sem a grade de colisão (ex.: falha ao ler os pixels), não bloqueia
-  // para não travar o jogo — mas nesse caso vale checar o console.
   if (!wallGrid) return false;
-
   const cellCol = (x / WALL_CELL) | 0;
   const cellRow = (y / WALL_CELL) | 0;
   if (cellCol < 0 || cellCol >= wallGridCols || cellRow < 0 || cellRow >= wallGridRows) return true;
-
   return wallGrid[cellRow * wallGridCols + cellCol] === 1;
 }
 
@@ -485,20 +450,15 @@ function playerHitsSand(x, y, radius) {
 function segmentHitsWall(fromX, fromY, toX, toY, radius) {
   const distance = Math.hypot(toX - fromX, toY - fromY);
   const steps = Math.max(1, Math.ceil(distance / 5)); 
-  
   for (let i = 1; i <= steps; i++) {
     const progress = i / steps;
     const x = fromX + (toX - fromX) * progress;
     const y = fromY + (toY - fromY) * progress;
-    
     if (playerHitsWall(x, y, radius) || playerHitsSand(x, y, radius)) return true;
   }
   return false;
 }
 
-// ==========================================
-// CONDIÇÕES DE VITÓRIA / DERROTA
-// ==========================================
 function reachedMazeEnd(x, y) {
   if (current === SAND_PANEL) {
     const reachedExit = SAND_EXIT_ZONES.some((zone) => x >= zone.left * mazeWidth && x <= zone.right * mazeWidth);
@@ -515,7 +475,6 @@ function triggerGameOver() {
   if (mazeCompleted) return;
   mazeDragging = false;
   mazePlayer.classList.remove("dragging");
-  
   setTimeout(() => {
     window.location.href = "gameover.html";
   }, 100);
@@ -526,7 +485,6 @@ function completeMaze() {
   mazeCompleted = true;
   mazeDragging = false;
   mazePlayer.classList.remove("dragging");
-  
   setTimeout(() => {
     if (current === SAND_PANEL) {
       img.classList.add("fade-out");
@@ -540,15 +498,10 @@ function completeMaze() {
   }, 350);
 }
 
-// ==========================================
-// CONTROLES INTERATIVOS
-// ==========================================
 function moveMazePlayer(clientX, clientY) {
   if (!isChallengePanel() || !mazeDragging || !mazeReady || mazeCompleted) return;
-  
   const coordinates = getImageCoordinates(clientX, clientY);
   if (!coordinates) return;
-  
   const { x, y, scale } = coordinates;
   const radius = PLAYER_RADIUS / scale;
   
@@ -575,13 +528,10 @@ function moveMazePlayer(clientX, clientY) {
 
 mazePlayer.addEventListener("pointerdown", (event) => {
   if (!isChallengePanel() || !mazeReady || mazeCompleted) return;
-  
   mazeDragging = true;
   mazePlayer.classList.add("dragging");
-  
   const challengeStart = getChallengeStart();
   mazeLastPosition = { x: challengeStart.x, y: challengeStart.y };
-  
   try { mazePlayer.setPointerCapture(event.pointerId); } catch (error) {}
   event.preventDefault();
 });
@@ -601,18 +551,13 @@ function stopMazeDragging(event) {
 mazePlayer.addEventListener("pointerup", stopMazeDragging);
 mazePlayer.addEventListener("pointercancel", stopMazeDragging);
 
-// ==========================================
-// RENDERIZAÇÃO DA INTERFACE (TEXTOS E CENA)
-// ==========================================
 function updatePanelText() {
   panelText.className = "comic-text";
   const text = panelTexts[current] || "";
-  
   if (current === 0 || !text) {
     panelText.textContent = "";
     return;
   }
-  
   panelText.innerHTML = text.replace(/\n/g, "<br>");
   panelText.classList.add(`text-panel-${current + 1}`);
   panelText.classList.add("visible");
@@ -624,6 +569,7 @@ function updateUI() {
   counter.textContent = `${current + 1} / ${panels.length}`;
   stage.classList.toggle("show-first-text", current === 0);
   stage.classList.toggle("maze-active", isChallengePanel());
+  stage.classList.toggle("dark-maze-active", current === DARK_MAZE_PANEL);
   
   updatePanelText();
   
@@ -635,6 +581,7 @@ function updateUI() {
     mazeReady = false;
     wallGrid = null;
     stopSand();
+    teardownDarkMaze();
   }
 }
 
@@ -642,7 +589,6 @@ function navigate(direction) {
   if (mazeDragging) return;
   const next = current + direction;
   if (next < 0 || next >= panels.length) return;
-  
   img.classList.add("fade-out");
   setTimeout(() => {
     current = next;
@@ -652,14 +598,10 @@ function navigate(direction) {
   }, 350);
 }
 
-// ==========================================
-// EVENTOS DE DISPARO
-// ==========================================
 btnPrev.addEventListener("click", () => navigate(-1));
 btnNext.addEventListener("click", () => navigate(1));
 
 document.addEventListener("keydown", (event) => {
-  if (isChallengePanel()) return; 
   if (event.key === "ArrowRight") navigate(1);
   if (event.key === "ArrowLeft") navigate(-1);
 });
@@ -668,6 +610,7 @@ function refreshMazePlayerPosition() {
   if (isChallengePanel() && mazeReady && mazeLastPosition) {
     positionPlayer(mazeLastPosition.x, mazeLastPosition.y);
   }
+  if (current === DARK_MAZE_PANEL) repositionDarkMazeElements();
 }
 
 if (typeof ResizeObserver !== "undefined") {
@@ -680,7 +623,128 @@ if (typeof ResizeObserver !== "undefined") {
 window.addEventListener("orientationchange", () => requestAnimationFrame(refreshMazePlayerPosition));
 
 // ==========================================
-// INICIALIZAÇÃO START
+// LABIRINTO ESCURO (QUAD 10) - USANDO CANVAS
 // ==========================================
+
+let darkOverlay = null;      
+let lampElements = [];       
+
+function initDarkMaze() {
+  lampStates = DARK_MAZE_LAMPS.map(() => ({ lit: false }));
+  teardownDarkMaze(); 
+
+  // Criar canvas de escuridão
+  darkOverlay = document.createElement("canvas");
+  darkOverlay.id = "dark-overlay";
+  stage.appendChild(darkOverlay);
+
+  // Criar hitboxes invisíveis para as lâmpadas
+  lampElements = DARK_MAZE_LAMPS.map((lamp, i) => {
+    const el = document.createElement("div");
+    el.className = "lamp-hitbox";
+    el.setAttribute("aria-label", "Lâmpada — clique para acender");
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", "0");
+    el.dataset.index = i;
+
+    el.addEventListener("click", () => toggleLamp(i));
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") toggleLamp(i); });
+
+    stage.appendChild(el);
+    return el;
+  });
+
+  requestAnimationFrame(repositionDarkMazeElements);
+}
+
+function teardownDarkMaze() {
+  if (darkOverlay) { darkOverlay.remove(); darkOverlay = null; }
+  lampElements.forEach(el => el.remove());
+  lampElements = [];
+}
+
+function toggleLamp(index) {
+  if (!lampStates[index]) return; 
+  lampStates[index].lit = !lampStates[index].lit;
+  updateDarkOverlay();
+}
+
+function updateDarkOverlay() {
+  if (!darkOverlay || current !== DARK_MAZE_PANEL) return;
+  const layout = getImageLayout();
+  if (!layout) return;
+
+  const stageRect = stage.getBoundingClientRect();
+  const stageW = stageRect.width;
+  const stageH = stageRect.height;
+
+  // Ajustar o tamanho do canvas para corresponder ao stage
+  if (darkOverlay.width !== stageW || darkOverlay.height !== stageH) {
+    darkOverlay.width = stageW;
+    darkOverlay.height = stageH;
+  }
+
+  const ctx = darkOverlay.getContext("2d");
+  
+  // Limpar e preencher com a cor de escuridão
+  ctx.clearRect(0, 0, stageW, stageH);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.96)";
+  ctx.fillRect(0, 0, stageW, stageH);
+
+  const getLampCoords = (lamp) => {
+    const cx = layout.rect.left - stageRect.left + layout.offsetX + lamp.x * layout.scale;
+    const cy = layout.rect.top - stageRect.top + layout.offsetY + lamp.y * layout.scale;
+    return { cx, cy };
+  };
+
+  // Desenhar os furos de luz
+  DARK_MAZE_LAMPS.forEach((lamp, i) => {
+    const { cx, cy } = getLampCoords(lamp);
+    const isLit = lampStates[i].lit;
+    const radius = isLit ? lamp.radius * layout.scale : 80 * layout.scale;
+    
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    
+    if (isLit) {
+      // Luz forte: centro 100% transparente (revela o mapa completamente)
+      gradient.addColorStop(0, "rgba(0, 0, 0, 1)");
+      gradient.addColorStop(0.6, "rgba(0, 0, 0, 0.4)");
+      gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+    } else {
+      // Luz fraca: centro 50% transparente (revela o desenho da lâmpada)
+      gradient.addColorStop(0, "rgba(0, 0, 0, 0.5)");
+      gradient.addColorStop(0.5, "rgba(0, 0, 0, 0.1)");
+      gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+    }
+    
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  
+  ctx.globalCompositeOperation = "source-over";
+}
+
+function repositionDarkMazeElements() {
+  if (current !== DARK_MAZE_PANEL) return;
+  const layout = getImageLayout();
+  if (!layout) { requestAnimationFrame(repositionDarkMazeElements); return; }
+
+  const stageRect = stage.getBoundingClientRect();
+
+  DARK_MAZE_LAMPS.forEach((lamp, i) => {
+    const el = lampElements[i];
+    if (!el) return;
+    const cx = layout.rect.left - stageRect.left + layout.offsetX + lamp.x * layout.scale;
+    const cy = layout.rect.top - stageRect.top + layout.offsetY + lamp.y * layout.scale;
+    el.style.left = `${cx}px`;
+    el.style.top  = `${cy}px`;
+  });
+
+  updateDarkOverlay();
+}
+
 img.src = panels[0];
 updateUI();
