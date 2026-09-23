@@ -61,10 +61,11 @@ const DARK_MAZE_START = { x: 190, y: 40 };
 // Quad 9 (Dentes): Início na lacuna superior direita
 const TEETH_START_RATIO = { x: 0.73, y: 0.055 };
 
+// Lâmpadas do Labirinto Escuro (Quad 10)
 const DARK_MAZE_LAMPS = [
   { x: 601, y: 97,  radius: 260 },
   { x: 150, y: 220, radius: 260 },
-  { x: 330, y: 400, radius: 260 }
+  { x: 310, y: 400, radius: 260 } // Ajustado para x: 310 (mais à esquerda, no centro do bulbo)
 ];
 
 let lampStates = DARK_MAZE_LAMPS.map(() => ({ lit: false }));
@@ -82,8 +83,10 @@ let mazeLastPosition = null;
 // ==========================================
 let sandGrains = [];
 let sandTimer = null;
+let sandDelayTimer = null;
 let sandSpawnCounter = 0;
 
+const PARTICLE_START_DELAY_MS = 3000;
 const SAND_TICK_MS = 60;
 const SAND_GRAIN_RADIUS = 3.5;
 const BLOOD_GRAIN_RADIUS = 4.5;
@@ -240,6 +243,10 @@ function stopSand() {
     clearInterval(sandTimer);
     sandTimer = null;
   }
+  if (sandDelayTimer) {
+    clearTimeout(sandDelayTimer);
+    sandDelayTimer = null;
+  }
   sandGrains = [];
   sandSpawnCounter = 0;
   sandLayer.replaceChildren();
@@ -247,9 +254,12 @@ function stopSand() {
 
 function createSand() {
   stopSand();
-  for (let i = 0; i < SAND_INITIAL_COUNT; i++) spawnSandGrain();
-  renderSand();
-  sandTimer = setInterval(updateSand, SAND_TICK_MS);
+  sandDelayTimer = setTimeout(() => {
+    if (!isParticlePanel() || !mazeReady) return;
+    for (let i = 0; i < SAND_INITIAL_COUNT; i++) spawnSandGrain();
+    renderSand();
+    sandTimer = setInterval(updateSand, SAND_TICK_MS);
+  }, PARTICLE_START_DELAY_MS);
 }
 
 function spawnSandGrain() {
@@ -560,13 +570,10 @@ function segmentHitsWall(fromX, fromY, toX, toY, radius) {
 }
 
 function reachedMazeEnd(x, y) {
-  // Ampulhetas (Quad 7 e 8): precisam sair pelo bocal central inferior
   if (current === SAND_PANEL || current === BLOOD_PANEL) {
     const reachedExit = SAND_EXIT_ZONES.some((zone) => x >= zone.left * mazeWidth && x <= zone.right * mazeWidth);
     return reachedExit && y >= mazeHeight - PLAYER_RADIUS;
   }
-  
-  // Todos os labirintos (incluindo o Quadrinho 9 - Dentes): basta alcançar a base da tela
   return y >= mazeHeight - PLAYER_RADIUS;
 }
 
@@ -844,14 +851,21 @@ function repositionDarkMazeElements() {
 }
 
 // ==========================================
-// TRILHA SONORA
+// TRILHA SONORA COM CROSSFADE SUAVE
 // ==========================================
-const hqAudio = document.getElementById("hq-audio");
+const audioPart1 = document.getElementById("audio-part1");
+const audioPart2 = document.getElementById("audio-part2");
 const audioToggle = document.getElementById("audio-toggle");
-let audioEnabled = true;
 
-function isSilentPanel(panelIndex) {
-  return false;
+let audioEnabled = true;
+let currentPlayingAudio = null;
+let crossfadeInterval = null;
+
+function getTargetAudio(panelIndex) {
+  if (panelIndex < 5) {
+    return audioPart1;
+  }
+  return audioPart2;
 }
 
 function updateAudioUI() {
@@ -860,29 +874,120 @@ function updateAudioUI() {
   audioToggle.setAttribute("aria-label", audioEnabled ? "Desativar trilha sonora" : "Ativar trilha sonora");
 }
 
-async function updateSoundtrack() {
-  if (!hqAudio || !audioEnabled) return;
-  try {
-    await hqAudio.play();
-  } catch (error) {
-    console.warn("O navegador bloqueou a reprodução automática da trilha.", error);
+function crossfade(fromAudio, toAudio, durationMs = 1500) {
+  if (crossfadeInterval) {
+    clearInterval(crossfadeInterval);
+    crossfadeInterval = null;
   }
+
+  if (!audioEnabled) {
+    if (fromAudio) {
+      fromAudio.pause();
+      fromAudio.currentTime = 0;
+    }
+    if (toAudio) {
+      toAudio.pause();
+      toAudio.currentTime = 0;
+    }
+    currentPlayingAudio = toAudio;
+    return;
+  }
+
+  const steps = 30;
+  const stepTime = durationMs / steps;
+  let step = 0;
+
+  if (toAudio) {
+    toAudio.volume = 0;
+    toAudio.play().catch(e => console.warn("Autoplay bloqueado:", e));
+  }
+
+  crossfadeInterval = setInterval(() => {
+    step++;
+    const progress = step / steps;
+
+    if (fromAudio) {
+      fromAudio.volume = Math.max(0, 1 - progress);
+    }
+    if (toAudio) {
+      toAudio.volume = Math.min(1, progress);
+    }
+
+    if (step >= steps) {
+      clearInterval(crossfadeInterval);
+      crossfadeInterval = null;
+
+      if (fromAudio) {
+        fromAudio.pause();
+        fromAudio.currentTime = 0;
+        fromAudio.volume = 1;
+      }
+      if (toAudio) {
+        toAudio.volume = 1;
+      }
+      currentPlayingAudio = toAudio;
+    }
+  }, stepTime);
+}
+
+async function updateSoundtrack() {
+  const targetAudio = getTargetAudio(current);
+
+  if (!currentPlayingAudio) {
+    currentPlayingAudio = targetAudio;
+    if (audioEnabled && currentPlayingAudio) {
+      currentPlayingAudio.volume = 1;
+      try {
+        await currentPlayingAudio.play();
+      } catch (e) {
+        console.warn("Autoplay inicial bloqueado pelo navegador:", e);
+      }
+    }
+    updateAudioUI();
+    return;
+  }
+
+  if (currentPlayingAudio !== targetAudio) {
+    crossfade(currentPlayingAudio, targetAudio, 1500);
+  } else {
+    if (audioEnabled && currentPlayingAudio.paused) {
+      try {
+        await currentPlayingAudio.play();
+      } catch (e) {}
+    }
+  }
+
   updateAudioUI();
 }
 
-if (audioToggle && hqAudio) {
+const unlockAudio = () => {
+  if (audioEnabled && currentPlayingAudio && currentPlayingAudio.paused) {
+    currentPlayingAudio.play().catch(() => {});
+  }
+  document.removeEventListener("pointerdown", unlockAudio);
+};
+document.addEventListener("pointerdown", unlockAudio);
+
+if (audioToggle) {
   audioToggle.addEventListener("click", async () => {
     audioEnabled = !audioEnabled;
     if (!audioEnabled) {
-      hqAudio.pause();
-      hqAudio.currentTime = 0;
+      if (crossfadeInterval) {
+        clearInterval(crossfadeInterval);
+        crossfadeInterval = null;
+      }
+      if (audioPart1) audioPart1.pause();
+      if (audioPart2) audioPart2.pause();
     } else {
-      try { await hqAudio.play(); } catch (error) { console.warn("Não foi possível iniciar a trilha.", error); }
+      const target = getTargetAudio(current);
+      if (target) {
+        target.volume = 1;
+        target.play().catch(e => console.warn(e));
+        currentPlayingAudio = target;
+      }
     }
     updateAudioUI();
   });
-  hqAudio.addEventListener("play", updateAudioUI);
-  hqAudio.addEventListener("pause", updateAudioUI);
 }
 
 // Inicialização

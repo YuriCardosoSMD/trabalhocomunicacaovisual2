@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HQ Digital Interativa</title>
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
   <main id="hq-stage">     
@@ -40,14 +40,17 @@
       </div>
     </div>
 
-    <!-- Trilha sonora da HQ -->
-    <audio id="hq-audio" preload="auto" loop>
-      <source src="assets/TrilhaSonora.mpeg" type="audio/mpeg">
+    <!-- Trilhas sonoras da HQ (divididas por capítulos) -->
+    <audio id="audio-part1" preload="auto" loop>
+      <source src="assets/trilhasonora1a5.mpeg" type="audio/mpeg">
+    </audio>
+    <audio id="audio-part2" preload="auto" loop>
+      <source src="assets/trilhasonora6a11.mpeg" type="audio/mpeg">
     </audio>
 
     <!-- Indicador textual da página atual (Ex: 1 / 12) -->
     <div id="page-counter"></div>   
   </main>
-  <script src="script.js?v=7"></script>
+  <script src="script.js?v=8"></script>
 </body>
 </html>

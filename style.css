@@ -330,16 +330,31 @@ body {
   background: transparent;
 }
 
+/* =========================================
+   LABIRINTO ESCURO (QUAD 10)
+========================================= */
+#dark-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  background: transparent;
+}
+
 .lamp-hitbox {
   position: absolute;
   z-index: 18;
-  width: 60px;
-  height: 60px;
+  width: 76px;   /* Aumentado de 60px para 76px */
+  height: 76px;  /* Aumentado de 60px para 76px */
   transform: translate(-50%, -50%);
   cursor: pointer;
   pointer-events: all;
   border-radius: 50%;
   background: transparent;
+}
+
+#hq-stage.dark-maze-active #maze-player {
+  z-index: 22;
 }
 
 #hq-stage.dark-maze-active #maze-player {
