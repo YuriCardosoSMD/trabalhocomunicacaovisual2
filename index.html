@@ -54,6 +54,18 @@
     <!-- Indicador textual da página atual -->
     <div id="page-counter"></div>
   </main>
+
+  <!-- Filtro que mapeia Branco (255, 255, 255) exatamente para RGB (224, 224, 192) -->
+  <svg style="position: absolute; width: 0; height: 0; pointer-events: none; overflow: hidden;" aria-hidden="true">
+    <filter id="tint-quad78" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="
+        0.87843 0       0       0 0
+        0       0.87843 0       0 0
+        0       0       0.75294 0 0
+        0       0       0       1 0" />
+    </filter>
+  </svg>
+
   <script src="script.js?v=8"></script>
 </body>
 </html>

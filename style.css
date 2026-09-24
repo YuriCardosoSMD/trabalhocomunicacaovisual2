@@ -40,18 +40,17 @@ body {
 }
 
 /* =========================================
-   CONTAINER PRINCIPAL DA HQ (RESPONSIVO REAL)
+   CONTAINER PRINCIPAL DA HQ (90% RESPONSIVO)
 ========================================= */
 #hq-stage {
   position: relative;
-  /* Calcula a largura máxima para nunca estourar a altura útil da tela (notebooks/tablets) */
-  width: min(88vw, calc((100vh - 76px) * 720 / 500));
-  width: min(88vw, calc((100dvh - 76px) * 720 / 500));
-  max-width: 1152px;
+  width: min(90vw, calc((90vh - 30px) * 720 / 500));
+  width: min(90vw, calc((90dvh - 30px) * 720 / 500));
+  max-width: none;
   aspect-ratio: 720 / 500;
   container-type: inline-size;
   user-select: none;
-  overflow: visible; /* Permite que o #page-counter apareça logo abaixo do quadrinho */
+  overflow: visible;
 }
 
 #panel-img {
@@ -66,12 +65,28 @@ body {
   pointer-events: none;
 }
 
+/* Aplicação da tonalidade rgb(224, 224, 192) nos quadrinhos 7 e 8 */
+#panel-img.tint-quad78 {
+  filter: url(#tint-quad78);
+}
+
+#teeth-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  image-rendering: pixelated;
+}
+
 #panel-img.fade-out {
   opacity: 0;
 }
 
 /* =========================================
-   ESTRUTURA BASE DOS TEXTOS (COM ESCALA FLUIDA)
+   ESTRUTURA BASE DOS TEXTOS
 ========================================= */
 .comic-text {
   position: absolute;
@@ -115,12 +130,12 @@ body {
 .text-vi { right: 15%; top: 48%; }
 .text-la { right: 10%; top: 68%; }
 
-/* QUADRINHOS 2 A 5: (~70px em desktop grande, proporcional em tablets/notebooks) */
+/* QUADRINHOS 2 A 5 */
 #panel-text.text-panel-2 {
   right: 20%;
   top: 46%;
   max-width: 55%;
-  font-size: clamp(32px, 6.1cqi, 70px);
+  font-size: 35px;
 }
 
 #panel-text.text-panel-3 {
@@ -141,10 +156,10 @@ body {
   right: 7%;
   top: 15%;
   max-width: 65%;
-  font-size: clamp(24px, 4.4cqi, 50px);
+  font-size: 32px;
 }
 
-/* QUADRINHOS 6 A 10: (~50px em desktop grande) */
+/* QUADRINHOS 6 A 10 */
 #panel-text.text-panel-6 {
   left: 7%;
   top: 8%;
@@ -251,7 +266,7 @@ body {
   border-radius: 0;
   background: #111;
   border: 1px solid #000;
-  box-shadow: 0 0 2px rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 2px rgba(224, 224, 192, 0.35);
   transform: translate(-50%, -50%);
 }
 
@@ -260,10 +275,7 @@ body {
   width: 9px;
   height: 9px;
   border-radius: 0 !important;
-  background: linear-gradient(135deg, #ff2a3f 0%, #aa0012 55%, #420006 100%) !important;
-  border: 1px solid #5a0008 !important;
-  box-shadow: 0 0 3px rgba(230, 10, 30, 0.5), inset 1px 1px 0 rgba(255, 150, 150, 0.4) !important;
-  filter: drop-shadow(0 1px 2px rgba(60, 0, 0, 0.6));
+  background: linear-gradient(#aa0012) !important;
 }
 
 /* =========================================

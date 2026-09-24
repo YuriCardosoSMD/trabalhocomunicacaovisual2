@@ -59,6 +59,17 @@ const DARK_MAZE_START = { x: 190, y: 40 };
 // Quad 9 (Dentes): Início na lacuna superior direita
 const TEETH_START_RATIO = { x: 0.73, y: 0.055 };
 
+// Variáveis de controle dos Dentes Descendo (Quad 9)
+const TEETH_SPLIT_RATIO = 0.44;     // Linha divisória dos dentes de cima (44% da altura)
+const TEETH_SPEED = 0.22;           // Velocidade de descida por quadro
+const TEETH_MAX_DROP_RATIO = 0.28;  // Limite máximo de descida
+let teethCanvas = null;
+let teethOffset = 0;
+let teethActive = false;
+let teethAnimFrame = null;
+let teethStartTimer = null;
+let teethPixelPattern = null;
+
 // Lâmpadas do Labirinto Escuro (Quad 10)
 const DARK_MAZE_LAMPS = [
   { x: 601, y: 97,  radius: 260 },
@@ -219,11 +230,154 @@ function prepareMaze() {
     teardownDarkMaze();
   }
 
+  if (current === TEETH_PANEL) {
+    initTeethChallenge();
+  } else {
+    teardownTeethChallenge();
+  }
+
   const challengeStart = getChallengeStart();
   mazeLastPosition = { x: challengeStart.x, y: challengeStart.y };
   requestAnimationFrame(() => {
     positionPlayer(challengeStart.x, challengeStart.y);
   });
+}
+
+// ==========================================
+// DENTES DESCENDO (QUAD 9) - TEXTURA PIXELADA
+// ==========================================
+function getTeethPixelPattern() {
+  if (teethPixelPattern) return teethPixelPattern;
+
+  const pCanvas = document.createElement("canvas");
+  const pSize = 32;
+  pCanvas.width = pSize;
+  pCanvas.height = pSize;
+  const pCtx = pCanvas.getContext("2d");
+
+  // Base preta de nanquim
+  pCtx.fillStyle = "#000000";
+  pCtx.fillRect(0, 0, pSize, pSize);
+
+  const imgData = pCtx.getImageData(0, 0, pSize, pSize);
+  const data = imgData.data;
+
+  // Ruído/retícula de pixels com granulação fiel à arte 1-bit
+  for (let y = 0; y < pSize; y++) {
+    for (let x = 0; x < pSize; x++) {
+      const idx = (y * pSize + x) * 4;
+      const hash = ((x * 47 + y * 73 + (x ^ y) * 29) % 100);
+      if (hash < 6) {
+        data[idx] = 26;     // R
+        data[idx + 1] = 24; // G
+        data[idx + 2] = 22; // B
+      } else if (hash < 12) {
+        data[idx] = 14;
+        data[idx + 1] = 13;
+        data[idx + 2] = 12;
+      }
+    }
+  }
+  pCtx.putImageData(imgData, 0, 0);
+
+  const dummyCanvas = document.createElement("canvas");
+  const dummyCtx = dummyCanvas.getContext("2d");
+  teethPixelPattern = dummyCtx.createPattern(pCanvas, "repeat");
+  return teethPixelPattern;
+}
+
+function initTeethChallenge() {
+  teardownTeethChallenge();
+  teethOffset = 0;
+  teethActive = false;
+
+  teethCanvas = document.createElement("canvas");
+  teethCanvas.id = "teeth-canvas";
+  teethCanvas.width = mazeWidth || 720;
+  teethCanvas.height = mazeHeight || 500;
+  stage.appendChild(teethCanvas);
+
+  img.style.visibility = "hidden"; // O canvas assume a renderização
+
+  teethStartTimer = setTimeout(() => {
+    if (current === TEETH_PANEL) teethActive = true;
+  }, 1500);
+
+  updateTeethAnimation();
+}
+
+function teardownTeethChallenge() {
+  if (teethAnimFrame) {
+    cancelAnimationFrame(teethAnimFrame);
+    teethAnimFrame = null;
+  }
+  if (teethStartTimer) {
+    clearTimeout(teethStartTimer);
+    teethStartTimer = null;
+  }
+  if (teethCanvas) {
+    teethCanvas.remove();
+    teethCanvas = null;
+  }
+  teethOffset = 0;
+  teethActive = false;
+  img.style.visibility = "";
+}
+
+function updateTeethAnimation() {
+  if (current !== TEETH_PANEL || !teethCanvas) return;
+
+  const w = mazeWidth || 720;
+  const h = mazeHeight || 500;
+  const splitY = Math.round(h * TEETH_SPLIT_RATIO);
+  const maxDrop = Math.round(h * TEETH_MAX_DROP_RATIO);
+
+  if (teethActive && !mazeCompleted) {
+    teethOffset = Math.min(maxDrop, teethOffset + TEETH_SPEED);
+
+    // Esmagamento caso o jogador fique na rota dos dentes
+    if (mazeLastPosition && !mazeCompleted) {
+      const layout = getImageLayout();
+      if (layout) {
+        const radius = PLAYER_RADIUS / layout.scale;
+        if (playerHitsWall(mazeLastPosition.x, mazeLastPosition.y, radius)) {
+          triggerGameOver();
+          return;
+        }
+      }
+    }
+  }
+
+  const currentDrop = Math.floor(teethOffset);
+  const ctx = teethCanvas.getContext("2d");
+  ctx.clearRect(0, 0, w, h);
+
+  // 1. Parte inferior estacionária (dentes de baixo)
+  ctx.drawImage(img, 0, splitY, w, h - splitY, 0, splitY, w, h - splitY);
+
+  // 2. Preenchimento superior com PRETO PIXELADO
+  if (currentDrop > 0) {
+    const pattern = getTeethPixelPattern();
+    ctx.fillStyle = pattern || "#000000";
+    ctx.fillRect(0, 0, w, currentDrop);
+
+    // Serrilhado de pixels na transição com a mandíbula superior
+    ctx.fillStyle = "#000000";
+    for (let x = 0; x < w; x += 2) {
+      const jagged = (x % 4 === 0) ? 2 : (x % 6 === 0) ? 1 : 0;
+      if (jagged > 0) {
+        ctx.fillRect(x, currentDrop, 2, jagged);
+      }
+    }
+  }
+
+  // 3. Dentes de cima descendo (em passos de pixels inteiros e mesclagem 'darken')
+  ctx.save();
+  ctx.globalCompositeOperation = "darken";
+  ctx.drawImage(img, 0, 0, w, splitY, 0, currentDrop, w, splitY);
+  ctx.restore();
+
+  teethAnimFrame = requestAnimationFrame(updateTeethAnimation);
 }
 
 // ==========================================
@@ -512,6 +666,39 @@ function positionPlayer(imageX, imageY) {
 function isWall(x, y) {
   if (x < 0 || x >= mazeWidth || y < 0 || y >= mazeHeight) return true;
   if (!wallGrid) return false;
+
+  // Lógica dinâmica para o Quadrinho 9 (Dentes descendo)
+  if (current === TEETH_PANEL && teethOffset > 0) {
+    const splitY = Math.round(mazeHeight * TEETH_SPLIT_RATIO);
+
+    // 1. O teto que fechou acima dos dentes é parede sólida
+    if (y < teethOffset) return true;
+
+    // 2. Colisão com os dentes superiores que desceram
+    if (y < splitY + teethOffset) {
+      const origY = y - teethOffset;
+      if (origY >= 0 && origY < splitY) {
+        const cellCol = (x / WALL_CELL) | 0;
+        const cellRow = (origY / WALL_CELL) | 0;
+        if (cellCol >= 0 && cellCol < wallGridCols && cellRow >= 0 && cellRow < wallGridRows) {
+          if (wallGrid[cellRow * wallGridCols + cellCol] === 1) return true;
+        }
+      }
+    }
+
+    // 3. Colisão com os dentes inferiores estacionários
+    if (y >= splitY) {
+      const cellCol = (x / WALL_CELL) | 0;
+      const cellRow = (y / WALL_CELL) | 0;
+      if (cellCol >= 0 && cellCol < wallGridCols && cellRow >= 0 && cellRow < wallGridRows) {
+        if (wallGrid[cellRow * wallGridCols + cellCol] === 1) return true;
+      }
+    }
+
+    return false;
+  }
+
+  // Colisão padrão para os demais labirintos
   const cellCol = (x / WALL_CELL) | 0;
   const cellRow = (y / WALL_CELL) | 0;
   if (cellCol < 0 || cellCol >= wallGridCols || cellRow < 0 || cellRow >= wallGridRows) return true;
@@ -621,6 +808,11 @@ mazePlayer.addEventListener("pointerdown", (event) => {
   mazePlayer.classList.add("dragging");
   const challengeStart = getChallengeStart();
   mazeLastPosition = { x: challengeStart.x, y: challengeStart.y };
+
+  if (current === TEETH_PANEL) {
+    teethActive = true;
+  }
+
   try { mazePlayer.setPointerCapture(event.pointerId); } catch (error) {}
   event.preventDefault();
 });
@@ -674,6 +866,7 @@ function updateUI() {
     wallGrid = null;
     stopSand();
     teardownDarkMaze();
+    teardownTeethChallenge();
   }
 }
 

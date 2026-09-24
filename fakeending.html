@@ -30,10 +30,10 @@
     }
     #fake-stage {
       position: relative;
-      /* Ajusta proporcionalmente para caber tanto na largura quanto na altura útil */
-      width: min(88vw, calc((100vh - 40px) * 720 / 500));
-      width: min(88vw, calc((100dvh - 40px) * 720 / 500));
-      max-width: 1152px;
+      /* Ocupa exatamente 90% da tela mantendo a proporção 720 / 500 */
+      width: min(90vw, calc(90vh * 720 / 500));
+      width: min(90vw, calc(90dvh * 720 / 500));
+      max-width: none;
       aspect-ratio: 720 / 500;
       overflow: hidden;
       cursor: pointer;
@@ -51,13 +51,13 @@
     }
     .fake-text {
       position: absolute;
-      top: 50%;
+      top: 45%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 90%;
       text-align: center;
       font-family: "Seventeen", sans-serif;
-      font-size: clamp(20px, 4.2cqi, 44px);
+      font-size: clamp(22px, 4.4cqi, 48px);
       line-height: 1.25;
       color: #111;
       text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.75),
