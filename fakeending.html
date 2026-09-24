@@ -7,37 +7,39 @@
   <style>
     @font-face {
       font-family: "Seventeen";
-      src: url("assets/fonts/I am Seventeen.ttf") format("truetype");
+      src: url("assets/fonts/I am Seventeen.ttf") format("truetype"),
+           url("assets/fonts/I_am_Seventeen.ttf") format("truetype");
       font-weight: normal;
       font-style: normal;
       font-display: swap;
     }
-
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
       background-color: #1a1008;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      min-height: 100dvh;
       overflow: hidden;
       font-family: "Seventeen", sans-serif;
     }
-
     #fake-stage {
       position: relative;
-      width: 80vw;
-      max-width: 1200px;
+      /* Ajusta proporcionalmente para caber tanto na largura quanto na altura útil */
+      width: min(88vw, calc((100vh - 40px) * 720 / 500));
+      width: min(88vw, calc((100dvh - 40px) * 720 / 500));
+      max-width: 1152px;
       aspect-ratio: 720 / 500;
       overflow: hidden;
       cursor: pointer;
+      container-type: inline-size;
+      user-select: none;
     }
-
     #fake-stage img {
       position: absolute;
       top: 0;
@@ -47,23 +49,31 @@
       object-fit: contain;
       pointer-events: none;
     }
-
-    @media (max-width: 1024px) {
-      #fake-stage {
-        width: 95vw;
-      }
-    }
-
-    @media (max-width: 380px) {
-      #fake-stage {
-        width: 92vw;
-      }
+    .fake-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      text-align: center;
+      font-family: "Seventeen", sans-serif;
+      font-size: clamp(20px, 4.2cqi, 44px);
+      line-height: 1.25;
+      color: #111;
+      text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.75),
+                  -1px -1px 0 rgba(255, 255, 255, 0.75),
+                   1px -1px 0 rgba(255, 255, 255, 0.75),
+                  -1px  1px 0 rgba(255, 255, 255, 0.75);
+      pointer-events: none;
+      user-select: none;
+      z-index: 10;
     }
   </style>
 </head>
 <body onclick="window.location.href='index.html'">
   <div id="fake-stage">
     <img src="assets/fakeending.gif" alt="Fake Ending">
+    <div class="fake-text">Eu te perdi, mas eu vou tentar de novo</div>
   </div>
 </body>
 </html>

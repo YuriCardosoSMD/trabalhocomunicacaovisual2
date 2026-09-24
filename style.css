@@ -13,6 +13,7 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  min-height: 100dvh;
   font-family: "Seventeen", "I am Seventeen", sans-serif;
   overflow: hidden;
 }
@@ -39,15 +40,18 @@ body {
 }
 
 /* =========================================
-   CONTAINER PRINCIPAL DA HQ
+   CONTAINER PRINCIPAL DA HQ (RESPONSIVO REAL)
 ========================================= */
 #hq-stage {
   position: relative;
-  width: 80vw;
-  max-width: 1200px;
+  /* Calcula a largura máxima para nunca estourar a altura útil da tela (notebooks/tablets) */
+  width: min(88vw, calc((100vh - 76px) * 720 / 500));
+  width: min(88vw, calc((100dvh - 76px) * 720 / 500));
+  max-width: 1152px;
   aspect-ratio: 720 / 500;
+  container-type: inline-size;
   user-select: none;
-  overflow: hidden;
+  overflow: visible; /* Permite que o #page-counter apareça logo abaixo do quadrinho */
 }
 
 #panel-img {
@@ -67,7 +71,7 @@ body {
 }
 
 /* =========================================
-   ESTRUTURA BASE DOS TEXTOS
+   ESTRUTURA BASE DOS TEXTOS (COM ESCALA FLUIDA)
 ========================================= */
 .comic-text {
   position: absolute;
@@ -92,10 +96,9 @@ body {
 }
 
 /* ==========================================================================
-   CONFIGURAÇÃO POR QUADRINHO (TAMANHOS E POSIÇÕES)
+   CONFIGURAÇÃO POR QUADRINHO (TAMANHOS E POSIÇÕES RESPONSIVAS)
 ========================================================================== */
-
-/* QUADRINHO 1: "Eu te vi lá" (Tamanho Aumentado) */
+/* QUADRINHO 1: "Eu te vi lá" */
 #hq-stage.show-first-text .text-eu,
 #hq-stage.show-first-text .text-te,
 #hq-stage.show-first-text .text-vi,
@@ -104,7 +107,7 @@ body {
 }
 
 .text-eu, .text-te, .text-vi, .text-la {
-  font-size: 100px;
+  font-size: clamp(48px, 8.8cqi, 100px);
 }
 
 .text-eu { left: 10%; top: 17%; }
@@ -112,77 +115,90 @@ body {
 .text-vi { right: 15%; top: 48%; }
 .text-la { right: 10%; top: 68%; }
 
-/* QUADRINHOS 2 A 5: (Tamanho padrão ~70px) */
+/* QUADRINHOS 2 A 5: (~70px em desktop grande, proporcional em tablets/notebooks) */
 #panel-text.text-panel-2 {
   right: 20%;
   top: 46%;
   max-width: 55%;
-  font-size: 70px;
+  font-size: clamp(32px, 6.1cqi, 70px);
 }
 
 #panel-text.text-panel-3 {
   right: 10%;
   bottom: 13%;
   max-width: 55%;
-  font-size: 70px;
+  font-size: clamp(32px, 6.1cqi, 70px);
 }
 
 #panel-text.text-panel-4 {
   left: 8%;
   top: 30%;
   max-width: 58%;
-  font-size: 70px;
+  font-size: clamp(32px, 6.1cqi, 70px);
 }
 
 #panel-text.text-panel-5 {
   right: 7%;
   top: 15%;
   max-width: 65%;
-  font-size: 50px;
+  font-size: clamp(24px, 4.4cqi, 50px);
 }
 
-/* QUADRINHOS 6 A 10: (Tamanho diminuído ~50px) */
+/* QUADRINHOS 6 A 10: (~50px em desktop grande) */
 #panel-text.text-panel-6 {
   left: 7%;
   top: 8%;
   max-width: 68%;
-  font-size: 50px;
+  font-size: clamp(22px, 4.3cqi, 50px);
 }
 
 #panel-text.text-panel-7 {
   right: 7%;
   top: 10%;
   max-width: 60%;
-  font-size: 50px;
+  font-size: clamp(22px, 4.3cqi, 50px);
 }
 
 #panel-text.text-panel-8 {
   left: 7%;
   top: 8%;
   max-width: 68%;
-  font-size: 50px;
+  font-size: clamp(22px, 4.3cqi, 50px);
 }
 
 #panel-text.text-panel-9 {
   left: 25%;
   top: 48%;
   max-width: 68%;
-  font-size: 50px;
+  font-size: clamp(22px, 4.3cqi, 50px);
 }
 
 #panel-text.text-panel-10 {
   left: 10%;
   top: 50%;
   max-width: 65%;
-  font-size: 50px;
+  font-size: clamp(22px, 4.3cqi, 50px);
 }
 
-/* QUADRINHO 11: Cena final */
+/* QUADRINHO 11: Cena final (trueending) */
 #panel-text.text-panel-11 {
-  left: 7%;
-  bottom: 10%;
+  right: 7%;
+  top: 5%;
   max-width: 65%;
-  font-size: clamp(14px, 2.1vw, 24px);
+  font-size: clamp(22px, 4.3cqi, 50px);
+}
+
+/* Texto "Fim" no canto inferior direito do último quadrinho */
+.text-fim {
+  right: 6%;
+  bottom: 8%;
+  font-size: clamp(26px, 4.8cqi, 56px);
+  color: #111;
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+#hq-stage.show-fim .text-fim {
+  opacity: 1;
 }
 
 /* =========================================
@@ -191,8 +207,8 @@ body {
 #maze-player {
   position: absolute;
   z-index: 25;
-  width: 26px;
-  height: 26px;
+  width: clamp(20px, 2.4cqi, 26px);
+  height: clamp(20px, 2.4cqi, 26px);
   background-image: url("assets/rostopersonagem.png");
   background-size: contain;
   background-repeat: no-repeat;
@@ -227,26 +243,26 @@ body {
   display: block;
 }
 
-/* Grão de areia padrão (Quad 7) */
+/* Grão de areia (Quad 7) - Pixel art quadrado */
 .sand-grain {
   position: absolute;
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: 0;
   background: #111;
   border: 1px solid #000;
   box-shadow: 0 0 2px rgba(255, 255, 255, 0.35);
   transform: translate(-50%, -50%);
 }
 
-/* Gotas de Sangue / Líquido Acumulado (Quad 8) */
+/* Sangue (Quad 8) - Pixel art quadrado */
 .sand-grain.blood-grain {
   width: 9px;
   height: 9px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ff2a3f 0%, #aa0012 55%, #420006 100%) !important;
+  border-radius: 0 !important;
+  background: linear-gradient(135deg, #ff2a3f 0%, #aa0012 55%, #420006 100%) !important;
   border: 1px solid #5a0008 !important;
-  box-shadow: 0 0 3px rgba(230, 10, 30, 0.5), inset 0 1px 1px rgba(255, 150, 150, 0.4) !important;
+  box-shadow: 0 0 3px rgba(230, 10, 30, 0.5), inset 1px 1px 0 rgba(255, 150, 150, 0.4) !important;
   filter: drop-shadow(0 1px 2px rgba(60, 0, 0, 0.6));
 }
 
@@ -257,7 +273,7 @@ body {
   position: absolute;
   top: 0;
   height: 100%;
-  width: 25%;
+  width: 22%;
   cursor: pointer;
   z-index: 10;
   display: flex;
@@ -312,22 +328,12 @@ body {
   bottom: -28px;
   left: 50%;
   transform: translateX(-50%);
-  color: rgba(200, 190, 165, 0.55);
+  color: rgba(200, 190, 165, 0.6);
   font-family: "Seventeen", "I am Seventeen", sans-serif;
   font-size: 13px;
   letter-spacing: 0.12em;
   pointer-events: none;
-}
-
-/* =========================================
-   LABIRINTO ESCURO (QUAD 10)
-========================================= */
-#dark-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 12;
-  pointer-events: none;
-  background: transparent;
+  white-space: nowrap;
 }
 
 /* =========================================
@@ -344,8 +350,8 @@ body {
 .lamp-hitbox {
   position: absolute;
   z-index: 18;
-  width: 76px;   /* Aumentado de 60px para 76px */
-  height: 76px;  /* Aumentado de 60px para 76px */
+  width: clamp(52px, 8.5cqi, 76px);
+  height: clamp(52px, 8.5cqi, 76px);
   transform: translate(-50%, -50%);
   cursor: pointer;
   pointer-events: all;
@@ -355,38 +361,6 @@ body {
 
 #hq-stage.dark-maze-active #maze-player {
   z-index: 22;
-}
-
-#hq-stage.dark-maze-active #maze-player {
-  z-index: 22;
-}
-
-/* =========================================
-   RESPONSIVIDADE (MEDIA QUERIES)
-========================================= */
-@media (max-width: 1024px) {
-  #hq-stage { width: 95vw; max-width: none; }
-  .nav-zone { width: 22%; padding: 0 10px; }
-  .arrow { width: 34px; height: 34px; }
-  .arrow svg { width: 15px; height: 15px; }
-  #panel-text { max-width: 70%; }
-  #maze-player { width: 24px; height: 24px; }
-}
-
-@media (max-width: 600px) {
-  .nav-zone { width: 22%; padding: 0 8px; }
-  .arrow { width: 30px; height: 30px; }
-  .arrow svg { width: 14px; height: 14px; }
-  #panel-text { max-width: 75%; }
-  #page-counter { bottom: -24px; font-size: 11px; }
-  #maze-player { width: 20px; height: 20px; }
-}
-
-@media (max-width: 380px) {
-  #hq-stage { width: 92vw; }
-  .arrow { width: 26px; height: 26px; border-width: 2px; }
-  .arrow svg { width: 12px; height: 12px; }
-  #maze-player { width: 18px; height: 18px; }
 }
 
 /* =========================================
@@ -399,36 +373,26 @@ body {
   z-index: 30;
   width: 42px;
   height: 42px;
-  border: 1.5px solid rgba(220,210,185,.7);
+  border: 1.5px solid rgba(220, 210, 185, 0.7);
   border-radius: 50%;
-  background: rgba(26,16,8,.62);
-  color: rgba(220,210,185,.95);
+  background: rgba(26, 16, 8, 0.62);
+  color: rgba(220, 210, 185, 0.95);
   font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   backdrop-filter: blur(3px);
-  transition: transform .2s ease, background .2s ease, border-color .2s ease;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 #audio-toggle:hover {
   transform: scale(1.08);
-  background: rgba(26,16,8,.82);
-  border-color: rgba(220,210,185,1);
+  background: rgba(26, 16, 8, 0.82);
+  border-color: rgba(220, 210, 185, 1);
 }
 
 #audio-toggle:focus-visible {
-  outline: 2px solid rgba(220,210,185,.95);
+  outline: 2px solid rgba(220, 210, 185, 0.95);
   outline-offset: 3px;
-}
-
-@media (max-width: 600px) {
-  #audio-toggle {
-    top: 10px;
-    left: 10px;
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
-  }
 }

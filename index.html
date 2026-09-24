@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
-  <main id="hq-stage">     
+  <main id="hq-stage">
     <!-- Imagem principal do quadrinho atual -->
     <img id="panel-img" src="" alt="Quadrinho" draggable="false">
 
@@ -16,6 +16,9 @@
     <div class="comic-text text-te" aria-hidden="true">te</div>
     <div class="comic-text text-vi" aria-hidden="true">vi</div>
     <div class="comic-text text-la" aria-hidden="true">lá</div>
+
+    <!-- Texto "Fim" exclusivo do último quadrinho (trueending) -->
+    <div class="comic-text text-fim" id="text-fim" aria-hidden="true">Fim</div>
 
     <!-- Contêiner dinâmico que recebe os textos das demais cenas via JavaScript -->
     <div id="panel-text" class="comic-text" aria-hidden="true"></div>
@@ -48,8 +51,8 @@
       <source src="assets/trilhasonora6a11.mpeg" type="audio/mpeg">
     </audio>
 
-    <!-- Indicador textual da página atual (Ex: 1 / 12) -->
-    <div id="page-counter"></div>   
+    <!-- Indicador textual da página atual -->
+    <div id="page-counter"></div>
   </main>
   <script src="script.js?v=8"></script>
 </body>

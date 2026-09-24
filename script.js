@@ -12,7 +12,6 @@ const panels = [
   "assets/quad8.gif",
   "assets/quad9.gif",
   "assets/quad10.gif",
-  "assets/quad11.gif",
   "assets/trueending.gif"
 ];
 
@@ -27,14 +26,13 @@ const panelTexts = {
   7: "O \nsilêncio \nseria \nbrutalmente\nassassinado",
   8: "Mostraríamos os dentes e\nberraríamos como hienas",
   9: "Que bom que agora nos resta\no silêncio e...",
-  10: "Nossos dentes estão escondidos\npelo cansaço..."
+  10: "Nossos \ndentes \nestão \nescondidos\npelo \ncansaço..."
 };
 
 // ==========================================
 // VARIÁVEIS DE CONTROLE E ELEMENTOS DOM
 // ==========================================
 let current = 0;
-
 const stage = document.getElementById("hq-stage");
 const img = document.getElementById("panel-img");
 const btnPrev = document.getElementById("btn-prev");
@@ -65,12 +63,11 @@ const TEETH_START_RATIO = { x: 0.73, y: 0.055 };
 const DARK_MAZE_LAMPS = [
   { x: 601, y: 97,  radius: 260 },
   { x: 150, y: 220, radius: 260 },
-  { x: 310, y: 400, radius: 260 } // Ajustado para x: 310 (mais à esquerda, no centro do bulbo)
+  { x: 310, y: 400, radius: 260 }
 ];
-
 let lampStates = DARK_MAZE_LAMPS.map(() => ({ lit: false }));
-const PLAYER_RADIUS = 3;
 
+const PLAYER_RADIUS = 3;
 let mazeWidth = 0;
 let mazeHeight = 0;
 let mazeReady = false;
@@ -99,14 +96,12 @@ const SAND_SPAWN_INTERVAL = 4;
 const SAND_MAX_GRAINS = 1200;
 
 const SAND_EXIT_ZONES = [{ left: 150 / 355, right: 205 / 355 }];
-
 const SAND_LEFT_CHAMBER = [
   [8 / 355, 4 / 261], [150 / 355, 4 / 261], [158 / 355, 24 / 261],
   [158 / 355, 55 / 261], [146 / 355, 86 / 261], [146 / 355, 116 / 261],
   [160 / 355, 145 / 261], [165 / 355, 182 / 261], [160 / 355, 220 / 261],
   [150 / 355, 250 / 261], [8 / 355, 250 / 261]
 ];
-
 const SAND_RIGHT_CHAMBER = SAND_LEFT_CHAMBER.map(([x, y]) => [1 - x, y]).reverse();
 
 // ==========================================
@@ -114,7 +109,6 @@ const SAND_RIGHT_CHAMBER = SAND_LEFT_CHAMBER.map(([x, y]) => [1 - x, y]).reverse
 // ==========================================
 const WALL_CELL = 8;
 const WALL_DENSITY_THRESHOLD = 0.35;
-
 const maskCanvas = document.createElement("canvas");
 const maskCtx = maskCanvas.getContext("2d", { willReadFrequently: true });
 let wallGrid = null;
@@ -141,7 +135,6 @@ function buildWallGrid() {
   wallGridCols = Math.ceil(mazeWidth / WALL_CELL);
   wallGridRows = Math.ceil(mazeHeight / WALL_CELL);
   const cellCount = wallGridCols * wallGridRows;
-
   const darkCount = new Int32Array(cellCount);
   const totalCount = new Int32Array(cellCount);
 
@@ -152,7 +145,6 @@ function buildWallGrid() {
       const cellIndex = cellRow * wallGridCols + cellCol;
       const pixelIndex = (y * mazeWidth + x) * 4;
       const luminance = (data[pixelIndex] + data[pixelIndex + 1] + data[pixelIndex + 2]) / 3;
-
       totalCount[cellIndex]++;
       if (luminance < 128) darkCount[cellIndex]++;
     }
@@ -162,7 +154,6 @@ function buildWallGrid() {
   for (let i = 0; i < cellCount; i++) {
     grid[i] = (darkCount[i] / Math.max(totalCount[i], 1)) > WALL_DENSITY_THRESHOLD ? 1 : 0;
   }
-
   wallGrid = grid;
 }
 
@@ -311,7 +302,6 @@ function updateSand() {
   }
 
   const isBlood = (current === BLOOD_PANEL);
-
   sandGrains.forEach((grain) => {
     grain.vy = Math.min(isBlood ? 5.2 : 6, grain.vy + SAND_GRAVITY);
     moveSandGrain(grain);
@@ -350,10 +340,8 @@ function sandPointInChamber(x, y, chamber) {
 function sandPositionAllowed(x, y) {
   if (y < 0) return true;
   if (y >= mazeHeight) return true;
-
   const isCentralDrain = y >= (242 / 261) * mazeHeight
     && SAND_EXIT_ZONES.some((zone) => x >= zone.left * mazeWidth && x <= zone.right * mazeWidth);
-
   if (isCentralDrain) return true;
   return sandPointInChamber(x, y, SAND_LEFT_CHAMBER) || sandPointInChamber(x, y, SAND_RIGHT_CHAMBER);
 }
@@ -377,11 +365,9 @@ function moveSandGrain(grain) {
     grain.y = nextY;
     return;
   }
-
   if (!sandGrainHitsWall(grain.x + grain.vx, grain.y, r)) {
     grain.x += grain.vx;
   }
-
   grain.vy = 0;
   if (nextY > mazeHeight - r) {
     grain.y = mazeHeight - r;
@@ -423,7 +409,6 @@ function resolveSandCollisions() {
             const deltaY = second.y - first.y;
             const distance = Math.hypot(deltaX, deltaY);
             const safeDistance = Math.max(distance, 0.01);
-
             const combinedRadius = (first.radius || baseRadius) + (second.radius || baseRadius);
 
             if (distance >= combinedRadius) return;
@@ -435,7 +420,6 @@ function resolveSandCollisions() {
             if (isBlood) {
               const horizontalDirection = first.x <= second.x ? 1 : -1;
               const lateralSpread = Math.max(push * 1.5, 0.7);
-
               const sepX1 = first.x - horizontalDirection * lateralSpread;
               const sepX2 = second.x + horizontalDirection * lateralSpread;
               const sepY1 = first.y - directionY * (push * 0.4);
@@ -495,7 +479,6 @@ function getImageLayout() {
   const naturalWidth = img.naturalWidth;
   const naturalHeight = img.naturalHeight;
   if (!naturalWidth || !naturalHeight || !rect.width || !rect.height) return null;
-
   const scale = Math.min(rect.width / naturalWidth, rect.height / naturalHeight);
   return {
     rect, scale,
@@ -529,11 +512,9 @@ function positionPlayer(imageX, imageY) {
 function isWall(x, y) {
   if (x < 0 || x >= mazeWidth || y < 0 || y >= mazeHeight) return true;
   if (!wallGrid) return false;
-
   const cellCol = (x / WALL_CELL) | 0;
   const cellRow = (y / WALL_CELL) | 0;
   if (cellCol < 0 || cellCol >= wallGridCols || cellRow < 0 || cellRow >= wallGridRows) return true;
-
   return wallGrid[cellRow * wallGridCols + cellCol] === 1;
 }
 
@@ -559,7 +540,6 @@ function playerHitsSand(x, y, radius) {
 function segmentHitsWall(fromX, fromY, toX, toY, radius) {
   const distance = Math.hypot(toX - fromX, toY - fromY);
   const steps = Math.max(1, Math.ceil(distance / 4));
-
   for (let i = 1; i <= steps; i++) {
     const progress = i / steps;
     const x = fromX + (toX - fromX) * progress;
@@ -606,10 +586,8 @@ function completeMaze() {
 
 function moveMazePlayer(clientX, clientY) {
   if (!isChallengePanel() || !mazeDragging || !mazeReady || mazeCompleted) return;
-
   const coordinates = getImageCoordinates(clientX, clientY);
   if (!coordinates) return;
-
   const { x, y, scale } = coordinates;
   const radius = PLAYER_RADIUS / scale;
 
@@ -681,11 +659,10 @@ function updateUI() {
   btnPrev.classList.toggle("hidden", current === 0);
   btnNext.classList.toggle("hidden", current === panels.length - 1);
   counter.textContent = `${current + 1} / ${panels.length}`;
-
   stage.classList.toggle("show-first-text", current === 0);
+  stage.classList.toggle("show-fim", current === panels.length - 1);
   stage.classList.toggle("maze-active", isChallengePanel());
   stage.classList.toggle("dark-maze-active", current === DARK_MAZE_PANEL);
-
   updatePanelText();
 
   if (isChallengePanel()) {
@@ -704,7 +681,6 @@ function navigate(direction) {
   if (mazeDragging) return;
   const next = current + direction;
   if (next < 0 || next >= panels.length) return;
-
   img.classList.add("fade-out");
   setTimeout(() => {
     current = next;
@@ -727,6 +703,9 @@ function refreshMazePlayerPosition() {
   if (isChallengePanel() && mazeReady && mazeLastPosition) {
     positionPlayer(mazeLastPosition.x, mazeLastPosition.y);
   }
+  if (isParticlePanel()) {
+    renderSand();
+  }
   if (current === DARK_MAZE_PANEL) repositionDarkMazeElements();
 }
 
@@ -736,7 +715,6 @@ if (typeof ResizeObserver !== "undefined") {
 } else {
   window.addEventListener("resize", refreshMazePlayerPosition);
 }
-
 window.addEventListener("orientationchange", () => requestAnimationFrame(refreshMazePlayerPosition));
 
 // ==========================================
@@ -748,7 +726,6 @@ let lampElements = [];
 function initDarkMaze() {
   lampStates = DARK_MAZE_LAMPS.map(() => ({ lit: false }));
   teardownDarkMaze();
-
   darkOverlay = document.createElement("canvas");
   darkOverlay.id = "dark-overlay";
   stage.appendChild(darkOverlay);
@@ -756,7 +733,7 @@ function initDarkMaze() {
   lampElements = DARK_MAZE_LAMPS.map((lamp, i) => {
     const el = document.createElement("div");
     el.className = "lamp-hitbox";
-    el.setAttribute("aria-label", "Lâmpada – clique para acender");
+    el.setAttribute("aria-label", "Lâmpada — clique para acender");
     el.setAttribute("role", "button");
     el.setAttribute("tabindex", "0");
     el.dataset.index = i;
@@ -765,7 +742,6 @@ function initDarkMaze() {
     stage.appendChild(el);
     return el;
   });
-
   requestAnimationFrame(repositionDarkMazeElements);
 }
 
@@ -812,7 +788,6 @@ function updateDarkOverlay() {
     const radius = isLit ? lamp.radius * layout.scale : 80 * layout.scale;
 
     const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-
     if (isLit) {
       gradient.addColorStop(0, "rgba(0, 0, 0, 1)");
       gradient.addColorStop(0.6, "rgba(0, 0, 0, 0.4)");
@@ -837,8 +812,8 @@ function repositionDarkMazeElements() {
   if (current !== DARK_MAZE_PANEL) return;
   const layout = getImageLayout();
   if (!layout) { requestAnimationFrame(repositionDarkMazeElements); return; }
-
   const stageRect = stage.getBoundingClientRect();
+
   DARK_MAZE_LAMPS.forEach((lamp, i) => {
     const el = lampElements[i];
     if (!el) return;
@@ -856,7 +831,6 @@ function repositionDarkMazeElements() {
 const audioPart1 = document.getElementById("audio-part1");
 const audioPart2 = document.getElementById("audio-part2");
 const audioToggle = document.getElementById("audio-toggle");
-
 let audioEnabled = true;
 let currentPlayingAudio = null;
 let crossfadeInterval = null;
@@ -905,7 +879,6 @@ function crossfade(fromAudio, toAudio, durationMs = 1500) {
   crossfadeInterval = setInterval(() => {
     step++;
     const progress = step / steps;
-
     if (fromAudio) {
       fromAudio.volume = Math.max(0, 1 - progress);
     }
@@ -916,7 +889,6 @@ function crossfade(fromAudio, toAudio, durationMs = 1500) {
     if (step >= steps) {
       clearInterval(crossfadeInterval);
       crossfadeInterval = null;
-
       if (fromAudio) {
         fromAudio.pause();
         fromAudio.currentTime = 0;
@@ -956,7 +928,6 @@ async function updateSoundtrack() {
       } catch (e) {}
     }
   }
-
   updateAudioUI();
 }
 
@@ -990,7 +961,7 @@ if (audioToggle) {
   });
 }
 
-// Inicialização
+// Inicializa
 img.src = panels[0];
 updateUI();
 updateSoundtrack();
